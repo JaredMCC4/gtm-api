@@ -1,0 +1,46 @@
+# Global normalization
+* text=auto
+
+# Line endings
+mvnw text eol=lf
+*.sh text eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# Source (force LF)
+*.java text eol=lf
+*.xml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.properties text eol=lf
+*.sql text eol=lf
+*.md text diff=markdown
+
+# Binary artifacts
+*.jar binary
+*.war binary
+*.ear binary
+*.class binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.psd binary
+*.ai binary
+*.xcf binary
+*.zip binary
+*.tar.gz binary
+*.rar binary
+
+# Generated (GitHub linguist)
+target/** linguist-generated
+build/** linguist-generated
+out/** linguist-generated
+
+# Lock / env (prefer current branch on merge)
+*.lock text
+.env merge=ours
+.env.* merge=ours

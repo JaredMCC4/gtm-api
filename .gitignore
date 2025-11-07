@@ -1,0 +1,190 @@
+############################
+# Compilación / Build
+############################
+target/
+build/
+out/
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+############################
+# IntelliJ IDEA
+############################
+.idea/
+*.iml
+*.iws
+*.ipr
+
+############################
+# Eclipse
+############################
+.classpath
+.project
+.settings/
+.factorypath
+
+############################
+# NetBeans
+############################
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+############################
+# VS Code
+############################
+.vscode/
+
+############################
+# Sistema Operativo
+############################
+.DS_Store
+Thumbs.db
+desktop.ini
+
+############################
+# Logs y perfiles
+############################
+*.log
+logs/
+spring.log
+hs_err_pid*
+replay_pid*
+*.hprof
+*.pid
+*.seed
+
+############################
+# Java / JVM
+############################
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+*.zip
+*.tar.gz
+*.rar
+
+############################
+# Maven
+############################
+# Repos locales accidentales
+.mvn/local-repo/
+
+############################
+# Cobertura / Reportes
+############################
+jacoco.exec
+coverage/
+.coverage/
+.site/
+*/surefire-reports/
+*/failsafe-reports/
+test-output/
+
+############################
+# Archivos temporales
+############################
+*.tmp
+*.temp
+*.swp
+*.swo
+*.bak
+*.orig
+*.rej
+
+############################
+# Configuración local / Secretos
+############################
+.env
+.env.*
+!.env.example
+.secrets/
+secret/
+application-*.yml
+application-*.yaml
+application-*.properties
+!application.properties
+
+############################
+# Base de datos / Dumps
+############################
+*.sql
+*.sql.gz
+*.dump
+db-dumps/
+
+############################
+# Subidas de archivos (runtime)
+############################
+uploads/
+!uploads/.gitkeep
+
+############################
+# Herramientas / QA
+############################
+*.iml
+.checkstyle/
+.pmd/
+.findsecbugs/
+spotbugsXml.xml
+sonar-report.*
+.sonar/
+.idea_modules/
+
+############################
+# Docker / Contenedores
+############################
+docker/
+*.pid
+**/docker-data/
+.env.docker.local
+
+############################
+# Node / Frontend
+############################
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+dist/
+build/
+*.tsbuildinfo
+
+############################
+# Selenium / Navegadores / Tests UI
+############################
+chromedriver.log
+geckodriver.log
+selenium-screenshot*
+cypress/
+.playwright/
+
+############################
+# Archivos de diseño / docs pesados
+############################
+*.psd
+*.ai
+*.xcf
+
+############################
+# Misceláneo
+############################
+HELP.md
+.tmp/
+.cache/
+.cache-loader/
+.parcel-cache/
+.idea_modules/
+*.DS_Store
+
+############################
+# Evitar ignorar accidentalmente
+############################
+!.gitignore
+!.gitattributes
+!.editorconfig
