@@ -36,6 +36,6 @@ public class Etiqueta {
 
     @NotBlank
     @Pattern(regexp = "^#[0-9A-Fa-f]{6}$")
-    @Column(name = "color_hex", nullable = false, length = 7)
+    @Column(name = "color_hex", nullable = false, length = 7, columnDefinition = "CHAR(7)")
     private String colorHex;
 }

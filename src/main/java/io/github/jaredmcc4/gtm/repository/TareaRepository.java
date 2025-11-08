@@ -25,7 +25,7 @@ public interface TareaRepository extends JpaRepository<Tarea, Long> {
 
     @Query("SELECT t FROM Tarea t WHERE t.usuario.id = :usuarioId " +
             "AND (LOWER(t.titulo) LIKE LOWER(CONCAT('%', :texto, '%')) " +
-            "OR LOWER(t.descripcion) LIKE LOWER(CONCAT('%', :texto, '%')))")
+            "OR (t.descripcion IS NOT NULL AND LOWER(CAST(t.descripcion AS string)) LIKE LOWER(CONCAT('%', :texto, '%'))))")
     Page<Tarea> searchByTexto(@Param("usuarioId") Long usuarioId,
                               @Param("texto") String texto,
                               Pageable pageable);

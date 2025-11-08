@@ -53,7 +53,7 @@ public class Usuario {
     @JoinTable(
         name = "usuarios_roles",
         joinColumns = @JoinColumn(name = "usuario_id"),
-        inverseJoinColumns = @JoinColumn(name = "rol_id"))
+        inverseJoinColumns = @JoinColumn(name = "role_id"))
     @Builder.Default
     private java.util.Set<Rol> roles = new java.util.HashSet<>();
 
