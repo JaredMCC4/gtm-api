@@ -108,6 +108,7 @@ application-*.yml
 application-*.yaml
 application-*.properties
 !application.properties
+application.properties
 
 ############################
 # Base de datos / Dumps
