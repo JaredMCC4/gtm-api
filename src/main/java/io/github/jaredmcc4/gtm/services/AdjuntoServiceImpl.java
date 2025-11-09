@@ -72,7 +72,16 @@ public class AdjuntoServiceImpl implements AdjuntoService{
     @Override
     @Transactional
     public void eliminarAdjunto(Long adjuntoId, Long usuarioId) {
-        // PENDIENTE para MAÑANA
+        Adjunto adjunto = adjuntoRepository.findByIdAndTareaUsuarioId(adjuntoId, usuarioId)
+                .orElseThrow(() -> new ResourceNotFoundException("Adjunto no encontrado o no pertenece al usuario."));
+        try {
+            if (adjunto.getPath() != null) {
+                Files.deleteIfExists(Paths.get(adjunto.getPath()));
+            }
+        } catch (IOException ex){
+            log.warn("No se pudo eliminar el archivo: {}", adjunto.getPath());
+        }
+        adjuntoRepository.delete(adjunto);
     }
 
     private void validarArchivo(MultipartFile file) {
