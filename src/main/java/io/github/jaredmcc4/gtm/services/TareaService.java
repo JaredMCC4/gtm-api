@@ -11,7 +11,7 @@ public interface TareaService {
 
     public Page<Tarea> obtenerTareasPorUsuarioId(Long usuarioId, Pageable pageable);
     public Page<Tarea> filtrarTareas(Long usuarioId, Tarea.EstadoTarea estado, String titulo,Tarea.Prioridad prioridad, Pageable pageable);
-    public Page<Tarea> buscarTareasPorTitulo(Long usuarioId, String titulo, Pageable pageable);
+    public Page<Tarea> buscarTareasPorTexto(Long usuarioId, String texto, Pageable pageable);
     public Page<Tarea> obtenerTareasPorEtiquetaId(Long etiquetaId, Long usuarioId,Pageable pageable);
 
     public List<Tarea> obtenerTareasProximasVencimiento(Long usuarioId, int cantidadDias);
