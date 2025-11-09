@@ -30,11 +30,15 @@ public class UsuarioServiceImpl implements UsuarioService {
     public Usuario actualizarUsuario(Long usuarioId, Usuario datosActualizados){
         log.info("Actualizando usuario con ID: {}", usuarioId);
         Usuario usuario = obtenerUsuarioPorId(usuarioId);
-        if (datosActualizados.getNombreUsuario() != null){
+        if (datosActualizados.getNombreUsuario() != null && !datosActualizados.getNombreUsuario().isBlank()){
+            if (datosActualizados.getNombreUsuario().length() > 120){
+                throw new IllegalArgumentException("El nombre de usuario no puede ser mayor a 120 caracteres.");
+            }
             usuario.setNombreUsuario(datosActualizados.getNombreUsuario());
         }
-        if (datosActualizados.getEmail() != null){
-            usuario.setEmail(datosActualizados.getEmail());
+
+        if (datosActualizados.getZonaHoraria() != null){
+            usuario.setZonaHoraria(datosActualizados.getZonaHoraria());
         }
 
         return usuarioRepository.save(usuario);
@@ -43,11 +47,18 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     @Transactional
     public void cambiarPassword(Long usuarioId, String passwordActual, String passwordNueva){
-        log.info("Cambiando password del usuario con ID: {}", usuarioId);
+        log.info("Cambiando contraseña del usuario con ID: {}", usuarioId);
         Usuario usuario = obtenerUsuarioPorId(usuarioId);
         if (!passwordEncoder.matches(passwordActual, usuario.getContrasenaHash())) {
             throw new IllegalArgumentException("La contraseña actual es incorrecta.");
         }
+        if (passwordEncoder.matches(passwordNueva, usuario.getContrasenaHash())) {
+            throw new IllegalArgumentException("La contraseña nueva debe ser diferente de la actual.");
+        }
+        if (passwordNueva == null || passwordNueva.length() < 8) {
+            throw new IllegalArgumentException("La contraseña nueva debe tener al menos 8 caracteres.");
+        }
+
         usuario.setContrasenaHash(passwordEncoder.encode(passwordNueva));
         usuarioRepository.save(usuario);
     }

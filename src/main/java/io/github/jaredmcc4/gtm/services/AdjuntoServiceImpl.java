@@ -7,8 +7,8 @@ import io.github.jaredmcc4.gtm.exception.UnauthorizedException;
 import io.github.jaredmcc4.gtm.repository.AdjuntoRepository;
 import io.github.jaredmcc4.gtm.repository.TareaRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -36,6 +36,8 @@ public class AdjuntoServiceImpl implements AdjuntoService{
     @Override
     @Transactional
     public Adjunto subirAdjunto(Long tareaId, MultipartFile file, Long usuarioId) {
+        log.info("Subiendo archivo a la tarea con ID: {}" +
+                "Usuario ID: {}", tareaId, usuarioId);
         Tarea tarea = tareaRepository.findByIdAndUsuarioId(tareaId, usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tarea no encontrada o no pertenece al usuario."));
         validarArchivo(file);
@@ -43,11 +45,30 @@ public class AdjuntoServiceImpl implements AdjuntoService{
         try{
             Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
             Files.createDirectories(uploadPath);
+            log.debug("Directorio de subida: {}", uploadPath);
+
             String originalFilename = file.getOriginalFilename();
-            String sanitizedFilename = (originalFilename == null ? "file" : originalFilename).replaceAll("[\\s]+", "_");
+            if (originalFilename == null || originalFilename.isBlank()){
+                log.warn("El archivo subido no tiene nombre para la tarea ID: {}", tareaId);
+                throw new IllegalArgumentException("El nombre del archivo no puede estar vacío.");
+            }
+
+            String sanitizedFilename = originalFilename.replaceAll("[^a-zA-Z0-9._-]", "_")
+                    .replaceAll("_{2,}", "_");
             String finalFilename = UUID.randomUUID() + "_" + sanitizedFilename;
-            Path destino = uploadPath.resolve(finalFilename);
+
+            Path destino = uploadPath.resolve(finalFilename).normalize();
+
+            // Valida que este en el directorio permitiod, detecta path traversal
+            if (!destino.startsWith(uploadPath)) {
+                log.error("Path Traversal detectado en el archivo: {}" +
+                        "Usuario ID: {}" +
+                        "Subida rechazada.", originalFilename, usuarioId);
+                throw new SecurityException("Ruta de archivo inválida.");
+            }
+
             Files.copy(file.getInputStream(), destino, StandardCopyOption.REPLACE_EXISTING);
+            log.info("Archivo guardado en la ruta: {}", destino);
 
             Adjunto adjunto = Adjunto.builder()
                     .tarea(tarea)
@@ -57,8 +78,15 @@ public class AdjuntoServiceImpl implements AdjuntoService{
                     .path(destino.toString())
                     .build();
 
-            return adjuntoRepository.save(adjunto);
+            Adjunto savedAdjunto = adjuntoRepository.save(adjunto);
+            log.info("Adjunto guardado con ID: {}" +
+                    "En Tarea ID: {}", savedAdjunto.getId(), tareaId);
+
+            return savedAdjunto;
         } catch (IOException e) {
+            log.error("Error de I/O: {}" +
+                    "Tarea ID: {}" +
+                    "Usuario ID: {}", e.getMessage(), tareaId, usuarioId);
             throw new IllegalStateException("Error al subir el archivo.", e);
         }
     }

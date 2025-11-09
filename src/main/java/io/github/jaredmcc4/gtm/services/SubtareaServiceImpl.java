@@ -33,15 +33,21 @@ public class SubtareaServiceImpl implements SubtareaService{
 
     @Override
     @Transactional
-    public Subtarea actualizarSubtarea(Long tareaId, Subtarea subtareaActualizada, Long usuarioId){
-        Subtarea actual = obtenerSubtareaPropia(tareaId, usuarioId);
+    public Subtarea actualizarSubtarea(Long subtareaId, Subtarea subtareaActualizada, Long usuarioId){
+        log.info("Actualizando subtarea con ID: {}\n" +
+                "Usuario ID: {}", subtareaId, usuarioId);
+        Subtarea actual = obtenerSubtareaPropia(subtareaId, usuarioId);
+
         if (subtareaActualizada.getTitulo() != null && !subtareaActualizada.getTitulo().isBlank()) {
+            if (subtareaActualizada.getTitulo().length() > 120){
+                throw new IllegalArgumentException("El título de la subtarea no puede ser mayor a 120 caracteres.");
+            }
             actual.setTitulo(subtareaActualizada.getTitulo());
         }
         if (subtareaActualizada.getCompletada() != null) {
             actual.setCompletada(subtareaActualizada.getCompletada());
         }
-        validarSubtarea(actual);
+
         return subtareaRepository.save(actual);
     }
 
@@ -60,8 +66,12 @@ public class SubtareaServiceImpl implements SubtareaService{
     }
 
     private void validarSubtarea(Subtarea subtarea){
-        if (subtarea.getTitulo() == null || subtarea.getTitulo().isBlank()) {
+        if (subtarea.getTitulo() == null || subtarea.getTitulo().trim().isEmpty()) {
             throw new IllegalArgumentException("El título de la subtarea no puede estar vacío.");
+        }
+
+        if (subtarea.getTitulo().length() > 120) {
+            throw new IllegalArgumentException("El título de la subtarea no puede exceder los 120 caracteres.");
         }
     }
 
