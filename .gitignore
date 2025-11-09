@@ -189,3 +189,6 @@ HELP.md
 !.gitignore
 !.gitattributes
 !.editorconfig
+
+#Uploaded Files
+uploads/
