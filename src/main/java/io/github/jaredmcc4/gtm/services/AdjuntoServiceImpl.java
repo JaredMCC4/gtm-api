@@ -5,15 +5,18 @@ import io.github.jaredmcc4.gtm.domain.Tarea;
 import io.github.jaredmcc4.gtm.exception.ResourceNotFoundException;
 import io.github.jaredmcc4.gtm.exception.UnauthorizedException;
 import io.github.jaredmcc4.gtm.repository.AdjuntoRepository;
-import io.github.jaredmcc4.gtm.repository.TareaRepository;
+import io.github.jaredmcc4.gtm.validator.FileValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -28,7 +31,7 @@ import java.util.UUID;
 public class AdjuntoServiceImpl implements AdjuntoService{
 
     private final AdjuntoRepository adjuntoRepository;
-    private final TareaRepository tareaRepository;
+    private final TareaService tareaService;
 
     @Value("${app.upload.dir}")
     private String uploadDir;
@@ -36,94 +39,106 @@ public class AdjuntoServiceImpl implements AdjuntoService{
     @Override
     @Transactional
     public Adjunto subirAdjunto(Long tareaId, MultipartFile file, Long usuarioId) {
-        log.info("Subiendo archivo a la tarea con ID: {}" +
-                "Usuario ID: {}", tareaId, usuarioId);
-        Tarea tarea = tareaRepository.findByIdAndUsuarioId(tareaId, usuarioId)
-                .orElseThrow(() -> new ResourceNotFoundException("Tarea no encontrada o no pertenece al usuario."));
-        validarArchivo(file);
+        log.info("Subiendo adjunto para tarea ID: {} y usuario ID: {}", tareaId, usuarioId);
 
-        try{
-            Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
-            Files.createDirectories(uploadPath);
-            log.debug("Directorio de subida: {}", uploadPath);
+        FileValidator.validate(file);
 
-            String originalFilename = file.getOriginalFilename();
-            if (originalFilename == null || originalFilename.isBlank()){
-                log.warn("El archivo subido no tiene nombre para la tarea ID: {}", tareaId);
-                throw new IllegalArgumentException("El nombre del archivo no puede estar vacío.");
-            }
+        Tarea tarea = tareaService.obtenerTareaPorIdYUsuarioId(tareaId, usuarioId);
 
-            String sanitizedFilename = originalFilename.replaceAll("[^a-zA-Z0-9._-]", "_")
-                    .replaceAll("_{2,}", "_");
-            String finalFilename = UUID.randomUUID() + "_" + sanitizedFilename;
+        String nombreArchivo = generarNombreUnico(file.getOriginalFilename());
+        Path directorioUsuario = Paths.get(uploadDir, usuarioId.toString());
+        Path rutaDestino = directorioUsuario.resolve(nombreArchivo);
 
-            Path destino = uploadPath.resolve(finalFilename).normalize();
-
-            // Valida que este en el directorio permitiod, detecta path traversal
-            if (!destino.startsWith(uploadPath)) {
-                log.error("Path Traversal detectado en el archivo: {}" +
-                        "Usuario ID: {}" +
-                        "Subida rechazada.", originalFilename, usuarioId);
-                throw new SecurityException("Ruta de archivo inválida.");
-            }
-
-            Files.copy(file.getInputStream(), destino, StandardCopyOption.REPLACE_EXISTING);
-            log.info("Archivo guardado en la ruta: {}", destino);
+        try {
+            Files.createDirectories(directorioUsuario);
+            Files.copy(file.getInputStream(), rutaDestino, StandardCopyOption.REPLACE_EXISTING);
 
             Adjunto adjunto = Adjunto.builder()
                     .tarea(tarea)
-                    .nombre(sanitizedFilename)
-                    .mimeType(file.getContentType() != null ? file.getContentType() : "application/octet-stream")
+                    .nombre(file.getOriginalFilename())
+                    .mimeType(file.getContentType())
                     .sizeBytes(file.getSize())
-                    .path(destino.toString())
+                    .path(rutaDestino.toString())
                     .build();
 
-            Adjunto savedAdjunto = adjuntoRepository.save(adjunto);
-            log.info("Adjunto guardado con ID: {}" +
-                    "En Tarea ID: {}", savedAdjunto.getId(), tareaId);
+            return adjuntoRepository.save(adjunto);
 
-            return savedAdjunto;
         } catch (IOException e) {
-            log.error("Error de I/O: {}" +
-                    "Tarea ID: {}" +
-                    "Usuario ID: {}", e.getMessage(), tareaId, usuarioId);
-            throw new IllegalStateException("Error al subir el archivo.", e);
+            log.error("Error al guardar el archivo: {}", e.getMessage());
+            throw new RuntimeException("Error al guardar el archivo: " + e.getMessage());
         }
     }
 
     @Override
     public List<Adjunto> mostrarAdjuntos(Long tareaId, Long usuarioId) {
-        confirmarPropiedad(tareaId, usuarioId);
+        log.debug("Mostrando adjuntos para tarea ID: {}" +
+                "Usuario ID: {}", tareaId, usuarioId);
+        tareaService.obtenerTareaPorIdYUsuarioId(tareaId, usuarioId);
         return adjuntoRepository.findByTareaId(tareaId);
     }
 
     @Override
     @Transactional
     public void eliminarAdjunto(Long adjuntoId, Long usuarioId) {
-        Adjunto adjunto = adjuntoRepository.findByIdAndTareaUsuarioId(adjuntoId, usuarioId)
-                .orElseThrow(() -> new ResourceNotFoundException("Adjunto no encontrado o no pertenece al usuario."));
+        log.info("Eliminando adjunto ID: {}" +
+                "Usuario ID: {}", adjuntoId, usuarioId);
+        Adjunto adjunto =  obtenerAdjuntoPorId(adjuntoId, usuarioId);
+
         try {
-            if (adjunto.getPath() != null) {
-                Files.deleteIfExists(Paths.get(adjunto.getPath()));
+            Path ruta = Paths.get(adjunto.getPath());
+            Files.deleteIfExists(ruta);
+            adjuntoRepository.delete(adjunto);
+        } catch (IOException e) {
+            log.error("Error al eliminar el archivo físico: {}", e.getMessage());
+            throw new RuntimeException("Error al eliminar el archivo: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Resource descargarAdjunto(Long adjuntoId, Long usuarioId) {
+        log.debug("Descargando adjunto con ID: {}" +
+                "Usuario ID: {}", adjuntoId, usuarioId);
+
+        Adjunto adjunto = obtenerAdjuntoPorId(adjuntoId, usuarioId);
+
+        try {
+            Path ruta = Paths.get(adjunto.getPath());
+            Resource resource = new UrlResource(ruta.toUri());
+            if(resource.exists() && resource.isReadable()){
+                return resource;
+            } else {
+                throw new ResourceNotFoundException("El archivo no existe o no puede ser leído.");
             }
-        } catch (IOException ex){
-            log.warn("No se pudo eliminar el archivo: {}", adjunto.getPath());
+        } catch (MalformedURLException e){
+            log.error("Error al formar la URL del archivo: {}", e.getMessage());
+            throw new RuntimeException("Error al descargar el archivo: " + e.getMessage());
+            }
         }
-        adjuntoRepository.delete(adjunto);
+
+        @Override
+        public Adjunto obtenerAdjuntoPorId(Long adjuntoId, Long usuarioId){
+            log.debug("Obteniendo adjunto con ID: {}" +
+                    "Usuario ID: {}", adjuntoId, usuarioId);
+
+            Adjunto adjunto = adjuntoRepository.findById(adjuntoId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Adjunto no encontrado."));
+
+            if (!adjunto.getTarea().getUsuario().getId().equals(usuarioId)) {
+                throw new UnauthorizedException("No tiene permiso para acceder al recurso.");
+            }
+
+            return adjunto;
+        }
+
+        private String generarNombreUnico(String nombreOriginal){
+            String aux = "";
+            int ultimo = nombreOriginal.lastIndexOf('.');
+
+            if (ultimo > 0) {
+                aux = nombreOriginal.substring(ultimo);
+            }
+            return UUID.randomUUID() + aux;
+        }
     }
 
-    private void validarArchivo(MultipartFile file) {
-        if (file.isEmpty()){
-            throw new IllegalArgumentException("El archivo está vacío.");
-        }
-        if (file.getSize() > 10 * 1024 * 1024){ // 10MB
-            throw new IllegalArgumentException("El archivo excede el tamaño máximo permitido (10MB).");
-        }
-    }
 
-    private void confirmarPropiedad(Long tareaId, Long usuarioId) {
-        if (tareaRepository.findByIdAndUsuarioId(tareaId, usuarioId).isEmpty()){
-            throw new UnauthorizedException("No cuenta con permisos para acceder a los adjuntos de esta tarea.");
-        }
-    }
-}
