@@ -12,7 +12,9 @@ import lombok.NoArgsConstructor;
 public class JwtResponse {
 
     private String jwtToken;
+    @Builder.Default
     private String type = "Bearer";
+
     private Long expiresIn;
     private String refreshToken;
 }
