@@ -189,6 +189,9 @@ HELP.md
 !.gitignore
 !.gitattributes
 !.editorconfig
+historias.md
+requerimientos.md
+tecnologias.md
 
 #Uploaded Files
 uploads/

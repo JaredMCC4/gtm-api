@@ -85,6 +85,8 @@ public class EtiquetaServiceImpl implements EtiquetaService{
 
     @Override
     public boolean existeEtiquetaPorNombreYUsuarioId(String nombre, Long usuarioId){
+        log.debug("Verificando existencia de etiqueta con nombre: {}\n" +
+                "Usuario ID: {}", nombre, usuarioId);
         return etiquetaRepository.existsByUsuarioIdAndNombre(usuarioId, nombre);
     }
 
