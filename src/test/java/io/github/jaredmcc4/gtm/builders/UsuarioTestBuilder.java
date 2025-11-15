@@ -10,7 +10,7 @@ public class UsuarioTestBuilder {
 
     private Long id = 1L;
     private String email = "test@test.com";
-    private String contrasenaHash = "";
+    private String contrasenaHash = "$2b$12$xixo0q/IJbSVn1es9h1Z8.EsHHmLGPYts1Hn.s.oxdwncxc./5mKa"; // Password123,
     private String nombreUsuario = "Test_User";
     private String zonaHoraria = "America/Costa_Rica";
     private Boolean activo = true;
