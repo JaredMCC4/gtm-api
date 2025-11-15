@@ -1,3 +1,4 @@
+/*
 package io.github.jaredmcc4.gtm.config;
 
 import org.springframework.boot.test.context.TestConfiguration;
@@ -19,3 +20,4 @@ public class TestContainersConfiguration {
                 .withReuse(true);
     }
 }
+*/
