@@ -215,7 +215,7 @@ class TareaRepositoryTest {
             tareaRepository.save(tarea2);
 
             entityManager.flush();
-            
+
             Page<Tarea> resultado = tareaRepository.findByUsuarioIdAndEtiquetaId(
                     usuario.getId(),
                     etiqueta1.getId(),
