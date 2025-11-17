@@ -18,4 +18,8 @@ public class PageResponse<T> {
     private Long totalElements;
     private Integer totalPages;
     private Boolean last;
+
+    public Boolean isLast(){
+        return pageNumber >= totalPages - 1;
+    }
 }

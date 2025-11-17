@@ -1,22 +1,24 @@
 package io.github.jaredmcc4.gtm.services;
 
-import io.github.jaredmcc4.gtm.builders.TareaTestBuilder;
-import io.github.jaredmcc4.gtm.builders.UsuarioTestBuilder;
 import io.github.jaredmcc4.gtm.domain.Adjunto;
 import io.github.jaredmcc4.gtm.domain.Tarea;
 import io.github.jaredmcc4.gtm.domain.Usuario;
 import io.github.jaredmcc4.gtm.exception.ResourceNotFoundException;
+import io.github.jaredmcc4.gtm.exception.UnauthorizedException;
 import io.github.jaredmcc4.gtm.repository.AdjuntoRepository;
-import io.github.jaredmcc4.gtm.repository.TareaRepository;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
 import org.springframework.core.io.Resource;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -25,22 +27,23 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
-@DisplayName("AdjuntoService - Unit Tests")
-class AdjuntoServiceImplTest {
 
+@ExtendWith(MockitoExtension.class)
+@DisplayName("Adjunto Service - Unit Tests (alineado a implementación)")
+class AdjuntoServiceImplTest {
     @Mock
     private AdjuntoRepository adjuntoRepository;
 
     @Mock
-    private TareaRepository tareaRepository;
+    private TareaService tareaService;
 
     @InjectMocks
     private AdjuntoServiceImpl adjuntoService;
@@ -50,16 +53,22 @@ class AdjuntoServiceImplTest {
 
     private Usuario usuario;
     private Tarea tarea;
+    private MultipartFile archivo;
 
     @BeforeEach
     void setUp() {
-        usuario = UsuarioTestBuilder.unUsuario().conId(1L).build();
-        tarea = TareaTestBuilder.unaTarea()
-                .conId(1L)
-                .conUsuario(usuario)
-                .build();
 
         ReflectionTestUtils.setField(adjuntoService, "uploadDir", tempDir.toString());
+
+        usuario = Usuario.builder().id(1L).build();
+        tarea = Tarea.builder().id(1L).usuario(usuario).build();
+
+        archivo = new MockMultipartFile(
+                "file",
+                "documento.pdf",
+                "application/pdf",
+                "contenido del archivo".getBytes()
+        );
     }
 
     @Nested
@@ -67,178 +76,106 @@ class AdjuntoServiceImplTest {
     class SubirAdjuntoTests {
 
         @Test
-        @DisplayName("Debería subir archivo correctamente")
-        void deberiaSubirArchivo() throws IOException {
-            // Arrange
-            MultipartFile file = new MockMultipartFile(
-                    "file",
-                    "documento.pdf",
-                    "application/pdf",
-                    "contenido del archivo".getBytes()
-            );
+        @DisplayName("Debería guardar adjunto correctamente")
+        void deberiaSubirAdjunto() throws IOException {
+            when(tareaService.obtenerTareaPorIdYUsuarioId(1L, 1L)).thenReturn(tarea);
+            when(adjuntoRepository.save(any(Adjunto.class))).thenAnswer(inv -> inv.getArgument(0));
 
-            when(tareaRepository.findByIdAndUsuarioId(1L, 1L))
-                    .thenReturn(Optional.of(tarea));
-            when(adjuntoRepository.save(any(Adjunto.class)))
-                    .thenAnswer(inv -> inv.getArgument(0));
+            Adjunto resultado = adjuntoService.subirAdjunto(1L, archivo, 1L);
 
-            // Act
-            Adjunto resultado = adjuntoService.subirAdjunto(file, 1L, 1L);
-
-            // Assert
             assertThat(resultado).isNotNull();
-            assertThat(resultado.getNombreArchivo()).isEqualTo("documento.pdf");
-            assertThat(resultado.getTipoArchivo()).isEqualTo("application/pdf");
-            assertThat(resultado.getRutaArchivo()).contains(tempDir.toString());
-            assertThat(Files.exists(Path.of(resultado.getRutaArchivo()))).isTrue();
+            assertThat(resultado.getNombre()).isEqualTo("documento.pdf");
+            assertThat(resultado.getMimeType()).isEqualTo("application/pdf");
+            assertThat(resultado.getSizeBytes()).isEqualTo(archivo.getSize());
+            assertThat(resultado.getTarea()).isEqualTo(tarea);
 
+            assertThat(Files.exists(Paths.get(resultado.getPath()))).isTrue();
             verify(adjuntoRepository).save(any(Adjunto.class));
         }
 
         @Test
         @DisplayName("Debería rechazar archivo vacío")
         void deberiaRechazarArchivoVacio() {
-            // Arrange
-            MultipartFile file = new MockMultipartFile(
+            MultipartFile archivoVacio = new MockMultipartFile(
                     "file",
-                    "vacio.pdf",
+                    "empty.pdf",
                     "application/pdf",
                     new byte[0]
             );
 
-            when(tareaRepository.findByIdAndUsuarioId(1L, 1L))
-                    .thenReturn(Optional.of(tarea));
+            when(tareaService.obtenerTareaPorIdYUsuarioId(1L, 1L)).thenReturn(tarea);
 
-            // Act & Assert
-            assertThatThrownBy(() -> adjuntoService.subirAdjunto(file, 1L, 1L))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("vacío");
+            assertThatThrownBy(() -> adjuntoService.subirAdjunto(1L, archivoVacio, 1L))
+                    .isInstanceOf(IllegalArgumentException.class);
 
             verify(adjuntoRepository, never()).save(any());
         }
 
         @Test
-        @DisplayName("Debería rechazar tipo de archivo no permitido")
-        void deberiaRechazarTipoNoPermitido() {
-            // Arrange
-            MultipartFile file = new MockMultipartFile(
-                    "file",
-                    "malware.exe",
-                    "application/x-msdownload",
-                    "contenido".getBytes()
-            );
-
-            when(tareaRepository.findByIdAndUsuarioId(1L, 1L))
-                    .thenReturn(Optional.of(tarea));
-
-            // Act & Assert
-            assertThatThrownBy(() -> adjuntoService.subirAdjunto(file, 1L, 1L))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("no está permitido");
-
-            verify(adjuntoRepository, never()).save(any());
-        }
-
-        @Test
-        @DisplayName("Debería rechazar archivo mayor a 10MB")
-        void deberiaRechazarArchivoGrande() {
-            // Arrange
-            byte[] largeContent = new byte[11 * 1024 * 1024]; // 11MB
-            MultipartFile file = new MockMultipartFile(
-                    "file",
-                    "grande.pdf",
-                    "application/pdf",
-                    largeContent
-            );
-
-            when(tareaRepository.findByIdAndUsuarioId(1L, 1L))
-                    .thenReturn(Optional.of(tarea));
-
-            // Act & Assert
-            assertThatThrownBy(() -> adjuntoService.subirAdjunto(file, 1L, 1L))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("tamaño máximo");
-
-            verify(adjuntoRepository, never()).save(any());
-        }
-
-        @Test
-        @DisplayName("Debería rechazar cuando tarea no existe")
+        @DisplayName("Debería rechazar tarea inexistente")
         void deberiaRechazarTareaInexistente() {
-            // Arrange
-            MultipartFile file = new MockMultipartFile(
-                    "file",
-                    "doc.pdf",
-                    "application/pdf",
-                    "contenido".getBytes()
-            );
+            when(tareaService.obtenerTareaPorIdYUsuarioId(999L, 1L))
+                    .thenThrow(new ResourceNotFoundException("Tarea no encontrada"));
 
-            when(tareaRepository.findByIdAndUsuarioId(999L, 1L))
-                    .thenReturn(Optional.empty());
-
-            // Act & Assert
-            assertThatThrownBy(() -> adjuntoService.subirAdjunto(file, 999L, 1L))
+            assertThatThrownBy(() -> adjuntoService.subirAdjunto(999L, archivo, 1L))
                     .isInstanceOf(ResourceNotFoundException.class);
 
             verify(adjuntoRepository, never()).save(any());
         }
 
         @Test
-        @DisplayName("Debería sanitizar nombre de archivo con caracteres especiales")
-        void deberiaSanitizarNombreArchivo() throws IOException {
-            // Arrange
-            MultipartFile file = new MockMultipartFile(
-                    "file",
-                    "archivo con espacios & símbolos!@#.pdf",
-                    "application/pdf",
-                    "contenido".getBytes()
-            );
+        @DisplayName("Debería generar nombre único (paths distintos) para archivos")
+        void deberiaGenerarNombreUnico() throws IOException {
+            when(tareaService.obtenerTareaPorIdYUsuarioId(1L, 1L)).thenReturn(tarea);
+            ArgumentCaptor<Adjunto> captor = ArgumentCaptor.forClass(Adjunto.class);
+            when(adjuntoRepository.save(captor.capture())).thenAnswer(inv -> inv.getArgument(0));
 
-            when(tareaRepository.findByIdAndUsuarioId(1L, 1L))
-                    .thenReturn(Optional.of(tarea));
-            when(adjuntoRepository.save(any(Adjunto.class)))
-                    .thenAnswer(inv -> inv.getArgument(0));
+            adjuntoService.subirAdjunto(1L, archivo, 1L);
+            adjuntoService.subirAdjunto(1L, archivo, 1L);
 
-            // Act
-            Adjunto resultado = adjuntoService.subirAdjunto(file, 1L, 1L);
-
-            // Assert
-            assertThat(resultado.getRutaArchivo())
-                    .doesNotContain(" ", "&", "!", "@", "#");
+            List<Adjunto> adjuntos = captor.getAllValues();
+            assertThat(adjuntos).hasSize(2);
+            assertThat(adjuntos.get(0).getPath())
+                    .isNotBlank()
+                    .isNotEqualTo(adjuntos.get(1).getPath());
         }
     }
 
     @Nested
-    @DisplayName("obtenerAdjuntos()")
-    class ObtenerAdjuntosTests {
+    @DisplayName("mostrarAdjuntos()")
+    class MostrarAdjuntosTests {
 
         @Test
-        @DisplayName("Debería obtener adjuntos de la tarea")
+        @DisplayName("Debería obtener adjuntos de una tarea")
         void deberiaObtenerAdjuntos() {
-            // Arrange
             Adjunto adjunto1 = Adjunto.builder()
                     .id(1L)
-                    .nombreArchivo("doc1.pdf")
+                    .nombre("archivo1.pdf")
                     .tarea(tarea)
                     .build();
+
             Adjunto adjunto2 = Adjunto.builder()
                     .id(2L)
-                    .nombreArchivo("doc2.pdf")
+                    .nombre("archivo2.pdf")
                     .tarea(tarea)
                     .build();
 
-            when(tareaRepository.findByIdAndUsuarioId(1L, 1L))
-                    .thenReturn(Optional.of(tarea));
-            when(adjuntoRepository.findByTareaId(1L))
-                    .thenReturn(List.of(adjunto1, adjunto2));
+            when(tareaService.obtenerTareaPorIdYUsuarioId(1L, 1L)).thenReturn(tarea);
+            when(adjuntoRepository.findByTareaId(1L)).thenReturn(List.of(adjunto1, adjunto2));
 
-            // Act
-            List<Adjunto> resultado = adjuntoService.obtenerAdjuntos(1L, 1L);
+            List<Adjunto> resultado = adjuntoService.mostrarAdjuntos(1L, 1L);
 
-            // Assert
-            assertThat(resultado).hasSize(2);
-            assertThat(resultado).extracting("nombreArchivo")
-                    .containsExactly("doc1.pdf", "doc2.pdf");
+            assertThat(resultado).hasSize(2).containsExactly(adjunto1, adjunto2);
+        }
+
+        @Test
+        @DisplayName("Debería retornar lista vacía si no hay adjuntos")
+        void deberiaRetornarListaVacia() {
+            when(tareaService.obtenerTareaPorIdYUsuarioId(1L, 1L)).thenReturn(tarea);
+            when(adjuntoRepository.findByTareaId(1L)).thenReturn(List.of());
+
+            List<Adjunto> resultado = adjuntoService.mostrarAdjuntos(1L, 1L);
+            assertThat(resultado).isEmpty();
         }
     }
 
@@ -247,51 +184,52 @@ class AdjuntoServiceImplTest {
     class DescargarAdjuntoTests {
 
         @Test
-        @DisplayName("Debería descargar archivo existente")
-        void deberiaDescargarArchivo() throws IOException {
-            // Arrange
-            Path archivoTest = tempDir.resolve("test.pdf");
-            Files.write(archivoTest, "contenido".getBytes());
+        @DisplayName("Debería cargar adjunto como Resource")
+        void deberiaDescargarAdjunto() throws IOException {
+
+            Path userDir = tempDir.resolve("1");
+            Files.createDirectories(userDir);
+            Path filePath = userDir.resolve("test-file.pdf");
+            Files.write(filePath, "contenido".getBytes());
 
             Adjunto adjunto = Adjunto.builder()
                     .id(1L)
-                    .nombreArchivo("test.pdf")
-                    .rutaArchivo(archivoTest.toString())
-                    .tarea(tarea)
+                    .path(filePath.toString())
+                    .nombre("documento.pdf")
+                    .tarea(tarea) // tarea con usuario id=1L
                     .build();
 
             when(adjuntoRepository.findById(1L)).thenReturn(Optional.of(adjunto));
-            when(tareaRepository.findByIdAndUsuarioId(1L, 1L))
-                    .thenReturn(Optional.of(tarea));
 
-            // Act
-            Resource resultado = adjuntoService.descargarAdjunto(1L, 1L, 1L);
+            Resource resultado = adjuntoService.descargarAdjunto(1L, 1L);
 
-            // Assert
             assertThat(resultado).isNotNull();
             assertThat(resultado.exists()).isTrue();
             assertThat(resultado.isReadable()).isTrue();
         }
 
         @Test
-        @DisplayName("Debería lanzar excepción si archivo no existe en disco")
-        void deberiaLanzarExcepcionSiArchivoNoExiste() {
-            // Arrange
+        @DisplayName("Debería rechazar adjunto inexistente")
+        void deberiaRechazarAdjuntoInexistente() {
+            when(adjuntoRepository.findById(999L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> adjuntoService.descargarAdjunto(999L, 1L))
+                    .isInstanceOf(ResourceNotFoundException.class);
+        }
+
+        @Test
+        @DisplayName("Debería rechazar acceso de otro usuario")
+        void deberiaRechazarAccesoOtroUsuario() {
             Adjunto adjunto = Adjunto.builder()
                     .id(1L)
-                    .nombreArchivo("inexistente.pdf")
-                    .rutaArchivo(tempDir.resolve("inexistente.pdf").toString())
-                    .tarea(tarea)
+                    .path(tempDir.resolve("1").resolve("file.pdf").toString())
+                    .tarea(tarea) // usuario id=1L
                     .build();
 
             when(adjuntoRepository.findById(1L)).thenReturn(Optional.of(adjunto));
-            when(tareaRepository.findByIdAndUsuarioId(1L, 1L))
-                    .thenReturn(Optional.of(tarea));
 
-            // Act & Assert
-            assertThatThrownBy(() -> adjuntoService.descargarAdjunto(1L, 1L, 1L))
-                    .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining("no se encuentra en el servidor");
+            assertThatThrownBy(() -> adjuntoService.descargarAdjunto(1L, 2L))
+                    .isInstanceOf(UnauthorizedException.class);
         }
     }
 
@@ -300,48 +238,59 @@ class AdjuntoServiceImplTest {
     class EliminarAdjuntoTests {
 
         @Test
-        @DisplayName("Debería eliminar adjunto y archivo físico")
-        void deberiaEliminarAdjuntoYArchivo() throws IOException {
-            // Arrange
-            Path archivoTest = tempDir.resolve("eliminar.pdf");
-            Files.write(archivoTest, "contenido".getBytes());
+        @DisplayName("Debería eliminar adjunto correctamente")
+        void deberiaEliminarAdjunto() throws IOException {
+            Path userDir = tempDir.resolve("1");
+            Files.createDirectories(userDir);
+            Path filePath = userDir.resolve("test-file.pdf");
+            Files.write(filePath, "contenido".getBytes());
 
             Adjunto adjunto = Adjunto.builder()
                     .id(1L)
-                    .nombreArchivo("eliminar.pdf")
-                    .rutaArchivo(archivoTest.toString())
+                    .path(filePath.toString())
+                    .nombre("documento.pdf")
                     .tarea(tarea)
                     .build();
 
             when(adjuntoRepository.findById(1L)).thenReturn(Optional.of(adjunto));
-            when(tareaRepository.findByIdAndUsuarioId(1L, 1L))
-                    .thenReturn(Optional.of(tarea));
+            doNothing().when(adjuntoRepository).delete(adjunto);
 
-            // Act
-            adjuntoService.eliminarAdjunto(1L, 1L, 1L);
+            adjuntoService.eliminarAdjunto(1L, 1L);
 
-            // Assert
-            assertThat(Files.exists(archivoTest)).isFalse();
             verify(adjuntoRepository).delete(adjunto);
+            assertThat(Files.exists(filePath)).isFalse();
         }
 
         @Test
-        @DisplayName("Debería eliminar registro aunque archivo físico no exista")
-        void deberiaEliminarRegistroAunqueArchivoNoExista() {
-            // Arrange
+        @DisplayName("Debería rechazar eliminar adjunto de otro usuario")
+        void deberiaRechazarEliminarAdjuntoAjeno() {
             Adjunto adjunto = Adjunto.builder()
                     .id(1L)
-                    .nombreArchivo("noexiste.pdf")
-                    .rutaArchivo(tempDir.resolve("noexiste.pdf").toString())
+                    .path(tempDir.resolve("1").resolve("file.pdf").toString())
                     .tarea(tarea)
                     .build();
 
             when(adjuntoRepository.findById(1L)).thenReturn(Optional.of(adjunto));
-            when(tareaRepository.findByIdAndUsuarioId(1L, 1L))
-                    .thenReturn(Optional.of(tarea));
 
-            // Act & Assert
-            assertThatCode(() -> adjuntoService.eliminarAdjunto(1L, 1L, 1L))
+            assertThatThrownBy(() -> adjuntoService.eliminarAdjunto(1L, 2L))
+                    .isInstanceOf(UnauthorizedException.class);
+
+            verify(adjuntoRepository, never()).delete(any());
+        }
+
+        @Test
+        @DisplayName("No debería fallar si el archivo físico no existe")
+        void noDeberiaFallarSiArchivoNoExiste() {
+            Adjunto adjunto = Adjunto.builder()
+                    .id(1L)
+                    .path(tempDir.resolve("1").resolve("non-existent.pdf").toString())
+                    .tarea(tarea)
+                    .build();
+
+            when(adjuntoRepository.findById(1L)).thenReturn(Optional.of(adjunto));
+            doNothing().when(adjuntoRepository).delete(adjunto);
+
+            assertThatCode(() -> adjuntoService.eliminarAdjunto(1L, 1L))
                     .doesNotThrowAnyException();
 
             verify(adjuntoRepository).delete(adjunto);

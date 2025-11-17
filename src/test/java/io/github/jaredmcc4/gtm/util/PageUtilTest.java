@@ -1,8 +1,8 @@
 package io.github.jaredmcc4.gtm.util;
 
 import io.github.jaredmcc4.gtm.dto.response.PageResponse;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -15,64 +15,66 @@ import static org.assertj.core.api.Assertions.*;
 @DisplayName("Page Util - Unit Tests")
 class PageUtilTest {
 
-    private PageUtil pageUtil;
+    @Nested
+    @DisplayName("toPageResponse()")
+    class ToPageResponseTests {
 
-    @BeforeEach
-    void setUp() {
-        pageUtil = new PageUtil();
-    }
+        @Test
+        @DisplayName("Debería convertir Page a PageResponse correctamente")
+        void deberiaMapearPageAPageResponse() {
 
-    @Test
-    @DisplayName("Debería mapear Page a PageResponse correctamente")
-    void deberiaMapearPageAPageResponse() {
+            List<String> content = List.of("Item1", "Item2", "Item3");
+            Page<String> page = new PageImpl<>(content, PageRequest.of(0, 10), 3);
+            PageResponse<String> result = PageUtil.toPageResponse(page, item -> item);
 
-        List<String> content = List.of("Item1", "Item2", "Item3");
-        Page<String> page = new PageImpl<>(content, PageRequest.of(0, 10), 3);
-        PageResponse<String> result = pageUtil.toPageResponse(page);
+            assertThat(result).isNotNull();
+            assertThat(result.getContent()).hasSize(3);
+            assertThat(result.getContent()).containsExactly("Item1", "Item2", "Item3");
+            assertThat(result.getTotalElements()).isEqualTo(3);
+            assertThat(result.getTotalPages()).isEqualTo(1);
+            assertThat(result.getPageNumber()).isEqualTo(0);
+            assertThat(result.getPageSize()).isEqualTo(10);
+            assertThat(result.isLast()).isTrue();
+        }
 
-        assertThat(result).isNotNull();
-        assertThat(result.getContent()).hasSize(3);
-        assertThat(result.getTotalElements()).isEqualTo(3);
-        assertThat(result.getTotalPages()).isEqualTo(1);
-        assertThat(result.getCurrentPage()).isEqualTo(0);
-        assertThat(result.getPageSize()).isEqualTo(10);
-        assertThat(result.isFirst()).isTrue();
-        assertThat(result.isLast()).isTrue();
-    }
+        @Test
+        @DisplayName("Debería aplicar mapper correctamente")
+        void deberiaAplicarMapper() {
+            List<Integer> content = List.of(1, 2, 3);
+            Page<Integer> page = new PageImpl<>(content, PageRequest.of(0, 10), 3);
+            PageResponse<String> result = PageUtil.toPageResponse(page, num -> "Número: " + num);
 
-    @Test
-    @DisplayName("Debería de manejar página vacía")
-    void deberiaManejarPaginaVacia() {
+            assertThat(result.getContent())
+                    .containsExactly("Número 1", "Número 2", "Número 3");
+        }
 
-        Page<String> emptyPage = new PageImpl<>(List.of(), PageRequest.of(0, 10), 0);
+        @Test
+        @DisplayName("Debería de manejar página vacía")
+        void deberiaManejarPaginaVacia() {
 
-        PageResponse<String> result = pageUtil.toPageResponse(emptyPage);
+            Page<String> page = new PageImpl<>(List.of(), PageRequest.of(0, 10), 0);
 
-        assertThat(result.getContent()).isEmpty();
-        assertThat(result.getTotalElements()).isZero();
-        assertThat(result.getTotalPages()).isZero();
-    }
+            PageResponse<String> result = PageUtil.toPageResponse(page, item -> item);
 
-    @Test
-    @DisplayName("Debería de identificar la primera y última página correctamente")
-    void deberiaIdentificarPrimeraYUltimaPagina() {
+            assertThat(result.getContent()).isEmpty();
+            assertThat(result.getTotalElements()).isZero();
+            assertThat(result.getTotalPages()).isZero();
+        }
 
-        List<String> content = List.of("Item1", "Item2");
-        Page<String> firstPage = new PageImpl<>(content, PageRequest.of(0, 2), 10);
-        Page<String> middlePage = new PageImpl<>(content, PageRequest.of(2, 2), 10);
-        Page<String> lastPage = new PageImpl<>(content, PageRequest.of(4, 2), 10);
+        @Test
+        @DisplayName("Debería manejar múltiples páginas correctamente")
+        void deberiaManejarMultiplesPaginas() {
 
-        PageResponse<String> first = pageUtil.toPageResponse(firstPage);
-        PageResponse<String> middle = pageUtil.toPageResponse(middlePage);
-        PageResponse<String> last = pageUtil.toPageResponse(lastPage);
+            List<String> content = List.of("Item1", "Item2");
+            Page<String> page = new PageImpl<>(content, PageRequest.of(1, 2), 5);
 
-        assertThat(first.isFirst()).isTrue();
-        assertThat(first.isLast()).isFalse();
+            PageResponse<String> result = PageUtil.toPageResponse(page, item -> item);
 
-        assertThat(middle.isFirst()).isFalse();
-        assertThat(middle.isLast()).isFalse();
-
-        assertThat(last.isFirst()).isFalse();
-        assertThat(last.isLast()).isTrue();
+            assertThat(result.getPageNumber()).isEqualTo(1);
+            assertThat(result.getPageSize()).isEqualTo(2);
+            assertThat(result.getTotalElements()).isEqualTo(5);
+            assertThat(result.getTotalPages()).isEqualTo(3);
+            assertThat(result.isLast()).isFalse();
+        }
     }
 }
