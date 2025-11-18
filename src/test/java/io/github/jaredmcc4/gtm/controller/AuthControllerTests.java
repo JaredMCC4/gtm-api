@@ -3,27 +3,30 @@ package io.github.jaredmcc4.gtm.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.jaredmcc4.gtm.builders.UsuarioTestBuilder;
 import io.github.jaredmcc4.gtm.config.TestSecurityConfig;
+import io.github.jaredmcc4.gtm.domain.Rol;
 import io.github.jaredmcc4.gtm.domain.Usuario;
 import io.github.jaredmcc4.gtm.dto.auth.JwtResponse;
 import io.github.jaredmcc4.gtm.dto.auth.LoginRequest;
 import io.github.jaredmcc4.gtm.dto.auth.RefreshTokenRequest;
 import io.github.jaredmcc4.gtm.dto.auth.RegistroRequest;
+import io.github.jaredmcc4.gtm.dto.usuario.UsuarioDto;
+import io.github.jaredmcc4.gtm.exception.UnauthorizedException;
+import io.github.jaredmcc4.gtm.mapper.UsuarioMapper;
 import io.github.jaredmcc4.gtm.services.AuthService;
+import io.github.jaredmcc4.gtm.util.JwtUtil;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -36,20 +39,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DisplayName("Auth Controller - Integration Tests")
 class AuthControllerTests {
 
-    @Configuration
-    @EnableWebSecurity
-    static class TestSecurityConfig {
-        @Bean
-        public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
-            http
-                    .csrf(csrf -> csrf.disable())
-                    .authorizeHttpRequests(auth -> auth
-                            .anyRequest().permitAll()
-                    );
-            return http.build();
-        }
-    }
-
     @Autowired
     private MockMvc mockMvc;
 
@@ -59,8 +48,27 @@ class AuthControllerTests {
     @MockitoBean
     private AuthService authService;
 
+    @MockitoBean
+    private UsuarioMapper usuarioMapper;
+
+    @MockitoBean
+    private JwtUtil jwtUtil;
+
+    @BeforeEach
+    void setUp() {
+
+        when(jwtUtil.generarToken(anyString(), anyLong(), anyList()))
+                .thenReturn("valid.jwt.token");
+        when(jwtUtil.validarToken(anyString(), anyString()))
+                .thenReturn(true);
+        when(jwtUtil.extraerEmail(anyString()))
+                .thenReturn("test@example.com");
+        when(jwtUtil.extraerUsuarioId(anyString()))
+                .thenReturn(1L);
+    }
+
     @Nested
-    @DisplayName("POST /api/auth/registro")
+    @DisplayName("POST /api/v1/auth/registro")
     class RegistroTests {
 
         @Test
@@ -78,9 +86,17 @@ class AuthControllerTests {
                     .conNombreUsuario(request.getNombreUsuario())
                     .build();
 
-            when(authService.registrarUsuario(any(RegistroRequest.class))).thenReturn(usuario);
+            UsuarioDto usuarioDto = UsuarioDto.builder()
+                    .id(1L)
+                    .email(request.getEmail())
+                    .nombreUsuario(request.getNombreUsuario())
+                    .enabled(true)
+                    .build();
 
-            mockMvc.perform(post("/api/auth/registro")
+            when(authService.registrarUsuario(any(RegistroRequest.class))).thenReturn(usuario);
+            when(usuarioMapper.toDto(any(Usuario.class))).thenReturn(usuarioDto);
+
+            mockMvc.perform(post("/api/v1/auth/registro")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -103,7 +119,7 @@ class AuthControllerTests {
                     "America/Costa_Rica"
             );
 
-            mockMvc.perform(post("/api/auth/registro")
+            mockMvc.perform(post("/api/v1/auth/registro")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -125,7 +141,7 @@ class AuthControllerTests {
                     "America/Costa_Rica"
             );
 
-            mockMvc.perform(post("/api/auth/registro")
+            mockMvc.perform(post("/api/v1/auth/registro")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -146,7 +162,7 @@ class AuthControllerTests {
                     "America/Costa_Rica"
             );
 
-            mockMvc.perform(post("/api/auth/registro")
+            mockMvc.perform(post("/api/v1/auth/registro")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -168,17 +184,18 @@ class AuthControllerTests {
             when(authService.registrarUsuario(any(RegistroRequest.class)))
                     .thenThrow(new IllegalArgumentException("Ya existe un usuario con el email proporcionado"));
 
-            mockMvc.perform(post("/api/auth/registro")
+            mockMvc.perform(post("/api/v1/auth/registro")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isConflict())
-                    .andExpect(jsonPath("$.success").value(false));
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.success").value(false))
+                    .andExpect(jsonPath("$.message").value("Ya existe un usuario con el email proporcionado"));
         }
     }
 
     @Nested
-    @DisplayName("POST /api/auth/login")
+    @DisplayName("POST /api/v1/auth/login")
     class LoginTests {
 
         @Test
@@ -194,7 +211,7 @@ class AuthControllerTests {
                     .build();
 
             when(authService.autenticarUsuario(any(LoginRequest.class))).thenReturn(jwtResponse);
-            mockMvc.perform(post("/api/auth/login")
+            mockMvc.perform(post("/api/v1/auth/login")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -218,11 +235,11 @@ class AuthControllerTests {
                     .thenThrow(new IllegalArgumentException("Credenciales inválidas"));
 
             // Act & Assert
-            mockMvc.perform(post("/api/auth/login")
+            mockMvc.perform(post("/api/v1/auth/login")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isUnauthorized())
+                    .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.success").value(false))
                     .andExpect(jsonPath("$.message").value("Credenciales inválidas"));
         }
@@ -233,7 +250,7 @@ class AuthControllerTests {
 
             LoginRequest request = new LoginRequest("", "");
 
-            mockMvc.perform(post("/api/auth/login")
+            mockMvc.perform(post("/api/v1/auth/login")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -246,7 +263,7 @@ class AuthControllerTests {
     }
 
     @Nested
-    @DisplayName("POST /api/auth/refresh")
+    @DisplayName("POST /api/v1/auth/refresh")
     class RefreshTokenTests {
 
         @Test
@@ -263,7 +280,7 @@ class AuthControllerTests {
 
             when(authService.refrescarToken(anyString())).thenReturn(jwtResponse);
 
-            mockMvc.perform(post("/api/auth/refresh")
+            mockMvc.perform(post("/api/v1/auth/refresh")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -281,9 +298,9 @@ class AuthControllerTests {
             RefreshTokenRequest request = new RefreshTokenRequest("invalid-token");
 
             when(authService.refrescarToken(anyString()))
-                    .thenThrow(new IllegalArgumentException("Refresh token inválido o expirado"));
+                    .thenThrow(new UnauthorizedException("Refresh token inválido o expirado"));
 
-            mockMvc.perform(post("/api/auth/refresh")
+            mockMvc.perform(post("/api/v1/auth/refresh")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -292,7 +309,7 @@ class AuthControllerTests {
     }
 
     @Nested
-    @DisplayName("POST /api/auth/logout")
+    @DisplayName("POST /api/v1/auth/logout")
     class LogoutTests {
 
         @Test
@@ -303,7 +320,7 @@ class AuthControllerTests {
             RefreshTokenRequest request = new RefreshTokenRequest("token-to-revoke");
             doNothing().when(authService).cerrarSesion(anyString());
 
-            mockMvc.perform(post("/api/auth/logout")
+            mockMvc.perform(post("/api/v1/auth/logout")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))

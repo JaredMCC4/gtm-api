@@ -7,6 +7,7 @@ import io.github.jaredmcc4.gtm.dto.auth.JwtResponse;
 import io.github.jaredmcc4.gtm.dto.auth.LoginRequest;
 import io.github.jaredmcc4.gtm.dto.auth.RegistroRequest;
 import io.github.jaredmcc4.gtm.exception.ResourceNotFoundException;
+import io.github.jaredmcc4.gtm.exception.UnauthorizedException;
 import io.github.jaredmcc4.gtm.repository.RefreshTokenRepository;
 import io.github.jaredmcc4.gtm.repository.RolRepository;
 import io.github.jaredmcc4.gtm.repository.UsuarioRepository;
@@ -106,13 +107,10 @@ public class AuthServiceImpl implements AuthService{
         RefreshToken token = refreshTokenRepository.findByToken(refreshToken)
                 .orElseThrow(() -> new ResourceNotFoundException("El refresh token es inválido."));
 
-        if (token.getRevoked()){
-            throw new IllegalArgumentException("El refresh token ha sido revocado.");
+        if (token.getRevoked() || token.getExpiresAt().isBefore(LocalDateTime.now())){
+            throw new UnauthorizedException("El refresh token ha sido revocado o expirado.");
         }
 
-        if (token.getExpiresAt().isBefore(LocalDateTime.now())){
-            throw new IllegalArgumentException("El refresh token ha expirado.");
-        }
 
         Usuario usuario = token.getUsuario();
         List<String> roles = usuario.getRoles().stream().map(Rol::getNombreRol).collect(Collectors.toList());

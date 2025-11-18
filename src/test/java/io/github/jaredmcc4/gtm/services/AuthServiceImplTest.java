@@ -23,6 +23,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.github.dockerjava.api.exception.UnauthorizedException;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -180,7 +182,7 @@ public class AuthServiceImplTest {
 
         @Test
         @DisplayName("Debería rechazar credenciales incorrectas")
-        void deberiaRechazarCredencialesIncorrectas() {
+        void deberiaRechazarCredencialesIncorrectas() throws Exception {
             LoginRequest request = new LoginRequest("test@test.com", "wrongPassword");
 
             when(usuarioRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(usuario));
@@ -273,7 +275,7 @@ public class AuthServiceImplTest {
             when(refreshTokenRepository.findByToken(refreshTokenValue)).thenReturn(Optional.of(refreshToken));
 
             assertThatThrownBy(() -> authService.refrescarToken(refreshTokenValue))
-                    .isInstanceOf(IllegalArgumentException.class);
+                    .isInstanceOf(UnauthorizedException.class);
             verify(jwtUtil, never()).generarToken(anyString(), anyLong(), anyList());
         }
 
@@ -290,7 +292,7 @@ public class AuthServiceImplTest {
             when(refreshTokenRepository.findByToken(refreshTokenValue)).thenReturn(Optional.of(refreshToken));
 
             assertThatThrownBy(() -> authService.refrescarToken(refreshTokenValue))
-                    .isInstanceOf(IllegalArgumentException.class);
+                    .isInstanceOf(UnauthorizedException.class);
         }
 
         @Test
