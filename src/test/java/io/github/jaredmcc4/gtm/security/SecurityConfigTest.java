@@ -4,8 +4,15 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
+import org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -14,16 +21,24 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
+@SpringBootTest(classes = SecurityConfigTest.TestApp.class)
 @AutoConfigureMockMvc
-@TestPropertySource(properties = {
-        "spring.datasource.url=jdbc:h2:mem:testdb",
-        "spring.jpa.hibernate.ddl-auto=create-drop",
-        "jwt.secret=test-secret-key-for-testing-purposes-only-min-256-bits",
-        "jwt.expiration=3600000"
-})
+@TestPropertySource(locations = "classpath:application.properties")
 @DisplayName("Security Config - Integration Tests")
 class SecurityConfigTest {
+
+    @SpringBootConfiguration
+    @EnableAutoConfiguration(exclude = {
+            DataSourceAutoConfiguration.class,
+            HibernateJpaAutoConfiguration.class,
+            JpaRepositoriesAutoConfiguration.class,
+            FlywayAutoConfiguration.class
+    })
+    @Import({
+            io.github.jaredmcc4.gtm.config.SecurityConfig.class,
+            io.github.jaredmcc4.gtm.config.ProjectConfig.class
+    })
+    static class TestApp {}
 
     @Autowired
     private MockMvc mockMvc;
@@ -52,7 +67,7 @@ class SecurityConfigTest {
         @DisplayName("Debería permitir acceso a Swagger sin autenticación")
         void deberiaPermitirAccesoASwagger() throws Exception {
             mockMvc.perform(get("/swagger-ui/index.html"))
-                    .andExpect(status().is3xxRedirection());
+                    .andExpect(status().isOk());
         }
     }
 

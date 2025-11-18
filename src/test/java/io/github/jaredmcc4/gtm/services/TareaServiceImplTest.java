@@ -264,6 +264,11 @@ class TareaServiceImplTest {
 
             Tarea resultado = tareaService.actualizarTarea(1L, tareaActualizada, 1L);
 
+            assertThat(resultado).isNotNull();
+            assertThat(resultado.getTitulo()).isEqualTo("Título actualizado");
+            assertThat(resultado.getPrioridad()).isEqualTo(Tarea.Prioridad.ALTA);
+            assertThat(resultado.getEstado()).isEqualTo(Tarea.EstadoTarea.COMPLETADA);
+
             verify(tareaRepository).save(argThat(tarea ->
                     tarea.getTitulo().equals("Título actualizado") &&
                             tarea.getPrioridad() == Tarea.Prioridad.ALTA &&
