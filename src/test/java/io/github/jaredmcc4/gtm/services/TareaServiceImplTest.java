@@ -83,7 +83,7 @@ class TareaServiceImplTest {
 
             assertThatThrownBy(() -> tareaService.crearTarea(tareaSinTitulo, usuario))
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("Título de la tarea no puede estar vacío");
+                    .hasMessageContaining("El título de la tarea no puede estar vacío");
 
             verify(tareaRepository, never()).save(any());
         }

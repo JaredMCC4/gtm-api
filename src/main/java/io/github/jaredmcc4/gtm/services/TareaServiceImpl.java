@@ -66,7 +66,7 @@ public class TareaServiceImpl implements TareaService{
         log.debug("Obteniendo tarea con ID: {}\n" +
                 "Usuario ID: {}", tareaId, usuarioId);
         return tareaRepository.findByIdAndUsuarioId(tareaId, usuarioId)
-                .orElseThrow(() -> new ResourceNotFoundException("Tarea no encontrada o no pertenece al usuario."));
+                .orElseThrow(() -> new ResourceNotFoundException("No encontrada o no pertenece al usuario"));
     }
 
     @Override
@@ -105,10 +105,10 @@ public class TareaServiceImpl implements TareaService{
 
     private void validarTarea(Tarea tarea){
         if (tarea.getTitulo() == null || tarea.getTitulo().trim().isEmpty()) {
-            throw new IllegalArgumentException("El título de la tarea no puede estar vacío.");
+            throw new IllegalArgumentException("El título de la tarea no puede estar vacío");
         }
         if (tarea.getTitulo().length() < 3 || tarea.getTitulo().length() > 120) {
-            throw new IllegalArgumentException("El título de la tarea debe tener entre 3 y 120 caracteres.");
+            throw new IllegalArgumentException("Entre 3 y 120 caracteres");
         }
     }
 
