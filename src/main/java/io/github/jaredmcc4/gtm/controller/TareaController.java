@@ -58,8 +58,7 @@ public class TareaController {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication instanceof JwtAuthenticationToken jwtAuth) {
-            String tokenValue = jwtAuth.getToken().getTokenValue();
-            return jwtUtil.extraerUsuarioId(tokenValue);
+            return jwtUtil.extraerUsuarioId(jwtAuth.getToken().getTokenValue());
         }
         throw new UnauthorizedException("Token JWT requerido.");
     }

@@ -1,5 +1,6 @@
 package io.github.jaredmcc4.gtm.i18n;
 
+import io.github.jaredmcc4.gtm.GtmApiApplication;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,13 +12,24 @@ import java.util.Locale;
 
 import static org.assertj.core.api.Assertions.*;
 
-@SpringBootTest
+@SpringBootTest(classes = GtmApiApplication.class, properties = {
+        "spring.autoconfigure.exclude=" +
+                "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration," +
+                "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration," +
+                "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration," +
+                "org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration"
+})
 @TestPropertySource(locations = "classpath:application.properties")
 @DisplayName("Message Source - Integration Tests")
 class MessageSourceTest {
 
     @Autowired
     private MessageSource messageSource;
+
+    @Test
+    @DisplayName("Contexto carga sin DB")
+    void contextUp(){
+    }
 
     @Test
     @DisplayName("Debería de cargar mensajes en español")
