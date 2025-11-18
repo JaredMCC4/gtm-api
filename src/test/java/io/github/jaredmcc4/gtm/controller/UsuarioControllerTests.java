@@ -12,7 +12,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import io.github.jaredmcc4.gtm.config.TestSecurityConfig;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,21 +34,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(UsuarioController.class)
-@Import(UsuarioControllerTests.TestSecurityConfig.class)
+@Import(TestSecurityConfig.class)
+@AutoConfigureMockMvc(addFilters = false)
 @DisplayName("Usuario Controller - Integration Tests")
 class UsuarioControllerTests {
-
-    @Configuration
-    @EnableWebSecurity
-    static class TestSecurityConfig {
-        @Bean
-        public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
-            http
-                    .csrf(csrf -> csrf.disable())
-                    .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
-            return http.build();
-        }
-    }
 
     @Autowired
     private MockMvc mockMvc;

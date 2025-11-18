@@ -1,6 +1,7 @@
 package io.github.jaredmcc4.gtm.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.jaredmcc4.gtm.config.TestSecurityConfig;
 import io.github.jaredmcc4.gtm.domain.Subtarea;
 import io.github.jaredmcc4.gtm.dto.subtarea.SubtareaDto;
 import io.github.jaredmcc4.gtm.mapper.SubtareaMapper;
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,21 +33,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(SubtareaController.class)
-@Import(SubtareaControllerTests.TestSecurityConfig.class)
+@Import(TestSecurityConfig.class)
+@AutoConfigureMockMvc(addFilters = false)
 @DisplayName("Subtarea Controller - Integration Tests")
 class SubtareaControllerTests {
-
-    @Configuration
-    @EnableWebSecurity
-    static class TestSecurityConfig {
-        @Bean
-        public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
-            http
-                    .csrf(csrf -> csrf.disable())
-                    .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
-            return http.build();
-        }
-    }
 
     @Autowired
     private MockMvc mockMvc;

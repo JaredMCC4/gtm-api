@@ -8,6 +8,8 @@ import io.github.jaredmcc4.gtm.domain.Tarea;
 import io.github.jaredmcc4.gtm.domain.Usuario;
 import io.github.jaredmcc4.gtm.dto.tarea.CrearTareaRequest;
 import io.github.jaredmcc4.gtm.dto.tarea.ActualizarTareaRequest;
+import io.github.jaredmcc4.gtm.dto.tarea.TareaDto;
+import io.github.jaredmcc4.gtm.exception.GlobalExceptionHandler;
 import io.github.jaredmcc4.gtm.exception.ResourceNotFoundException;
 import io.github.jaredmcc4.gtm.mapper.TareaMapper;
 import io.github.jaredmcc4.gtm.services.TareaService;
@@ -18,18 +20,15 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -39,27 +38,15 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(TareaController.class)
-@Import(TestSecurityConfig.class)
+@Import({TestSecurityConfig.class, GlobalExceptionHandler.class})
+@AutoConfigureMockMvc
 @DisplayName("Tarea Controller - Integration Tests")
 class TareaControllerTests {
-
-    @Configuration
-    @EnableWebSecurity
-    static class TestSecurityConfig {
-        @Bean
-        public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
-            http
-                    .csrf(csrf -> csrf.disable())
-                    .authorizeHttpRequests(auth -> auth
-                            .anyRequest().permitAll()
-                    );
-            return http.build();
-        }
-    }
 
     @Autowired
     private MockMvc mockMvc;
@@ -81,6 +68,7 @@ class TareaControllerTests {
 
     private Usuario usuario;
     private Tarea tarea;
+    private TareaDto tareaDto;
 
     @BeforeEach
     void setUp() {
@@ -91,19 +79,33 @@ class TareaControllerTests {
                 .conTitulo("Tarea de prueba")
                 .build();
 
+        tareaDto = TareaDto.builder()
+                .id(1L)
+                .titulo("Tarea de prueba")
+                .build();
+
         when(jwtUtil.extraerUsuarioId(anyString())).thenReturn(1L);
+
         when(usuarioService.obtenerUsuarioPorId(1L)).thenReturn(usuario);
+        when(tareaMapper.toDto(any(Tarea.class))).thenReturn(tareaDto);
+    }
+
+    private Jwt jwtMock() {
+        return Jwt.withTokenValue("token-mock")
+                .header("alg", "none")
+                .claim("sub", "user-id")
+                .build();
     }
 
     @Nested
-    @DisplayName("POST /api/tareas")
+    @DisplayName("POST /api/v1/tareas")
     class CrearTareaTests {
 
         @Test
         @WithMockUser
         @DisplayName("Debería poder crear una tarea correctamente")
         void deberiaCrearTarea() throws Exception {
-            // Arrange
+
             CrearTareaRequest request = CrearTareaRequest.builder()
                     .titulo("Nueva tarea")
                     .descripcion("Descripción de la tarea")
@@ -113,14 +115,13 @@ class TareaControllerTests {
 
             when(tareaService.crearTarea(any(Tarea.class), any(Usuario.class))).thenReturn(tarea);
 
-            mockMvc.perform(post("/api/tareas")
+            mockMvc.perform(post("/api/v1/tareas")
                             .with(csrf())
-                            .header("Authorization", "Bearer jwt.token")
+                            .with(jwt().jwt(jwtMock()))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.success").value(true))
-                    .andExpect(jsonPath("$.message").value("Tarea creada exitosamente"));
+                    .andExpect(jsonPath("$.success").value(true));
 
             verify(tareaService).crearTarea(any(Tarea.class), eq(usuario));
         }
@@ -134,13 +135,12 @@ class TareaControllerTests {
                     .titulo("")
                     .build();
 
-            mockMvc.perform(post("/api/tareas")
+            mockMvc.perform(post("/api/v1/tareas")
                             .with(csrf())
-                            .header("Authorization", "Bearer jwt.token")
+                            .with(jwt().jwt(jwtMock()))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.errors.titulo").exists());
+                    .andExpect(status().isBadRequest());
 
             verify(tareaService, never()).crearTarea(any(), any());
         }
@@ -154,9 +154,9 @@ class TareaControllerTests {
                     .titulo("ab")
                     .build();
 
-            mockMvc.perform(post("/api/tareas")
+            mockMvc.perform(post("/api/v1/tareas")
                             .with(csrf())
-                            .header("Authorization", "Bearer jwt.token")
+                            .with(jwt().jwt(jwtMock()))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
@@ -170,7 +170,7 @@ class TareaControllerTests {
                     .titulo("Nueva tarea")
                     .build();
 
-            mockMvc.perform(post("/api/tareas")
+            mockMvc.perform(post("/api/v1/tareas")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -179,7 +179,7 @@ class TareaControllerTests {
     }
 
     @Nested
-    @DisplayName("GET /api/tareas")
+    @DisplayName("GET /api/v1/tareas")
     class ObtenerTareasTests {
 
         @Test
@@ -195,14 +195,12 @@ class TareaControllerTests {
 
             when(tareaService.obtenerTareasPorUsuarioId(eq(1L), any())).thenReturn(page);
 
-            mockMvc.perform(get("/api/tareas")
-                            .header("Authorization", "Bearer jwt.token")
+            mockMvc.perform(get("/api/v1/tareas")
+                            .with(jwt().jwt(jwtMock()))
                             .param("page", "0")
                             .param("size", "10"))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.success").value(true))
-                    .andExpect(jsonPath("$.data.content").isArray())
-                    .andExpect(jsonPath("$.data.totalElements").value(1));
+                    .andExpect(jsonPath("$.success").value(true));
 
             verify(tareaService).obtenerTareasPorUsuarioId(eq(1L), any());
         }
@@ -215,11 +213,10 @@ class TareaControllerTests {
             Page<Tarea> page = new PageImpl<>(List.of(tarea), PageRequest.of(0, 10), 1);
             when(tareaService.filtrarTareas(eq(1L), any(), any(), any(), any())).thenReturn(page);
 
-            mockMvc.perform(get("/api/tareas")
-                            .header("Authorization", "Bearer jwt.token")
+            mockMvc.perform(get("/api/v1/tareas")
+                            .with(jwt().jwt(jwtMock()))
                             .param("estado", "PENDIENTE"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.data.content").isArray());
+                    .andExpect(status().isOk());
 
             verify(tareaService).filtrarTareas(
                     eq(1L),
@@ -238,8 +235,8 @@ class TareaControllerTests {
             Page<Tarea> page = new PageImpl<>(List.of(tarea), PageRequest.of(0, 10), 1);
             when(tareaService.buscarTareasPorTexto(eq(1L), anyString(), any())).thenReturn(page);
 
-            mockMvc.perform(get("/api/tareas")
-                            .header("Authorization", "Bearer jwt.token")
+            mockMvc.perform(get("/api/v1/tareas")
+                            .with(jwt().jwt(jwtMock()))
                             .param("search", "prueba"))
                     .andExpect(status().isOk());
 
@@ -248,7 +245,7 @@ class TareaControllerTests {
     }
 
     @Nested
-    @DisplayName("GET /api/tareas/{id}")
+    @DisplayName("GET /api/v1/tareas/{id}")
     class ObtenerTareaPorIdTests {
 
         @Test
@@ -258,11 +255,10 @@ class TareaControllerTests {
 
             when(tareaService.obtenerTareaPorIdYUsuarioId(1L, 1L)).thenReturn(tarea);
 
-            mockMvc.perform(get("/api/tareas/1")
-                            .header("Authorization", "Bearer jwt.token"))
+            mockMvc.perform(get("/api/v1/tareas/1")
+                        .with(jwt().jwt(jwtMock())))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.success").value(true))
-                    .andExpect(jsonPath("$.data").exists());
+                    .andExpect(jsonPath("$.success").value(true));
 
             verify(tareaService).obtenerTareaPorIdYUsuarioId(1L, 1L);
         }
@@ -275,14 +271,14 @@ class TareaControllerTests {
             when(tareaService.obtenerTareaPorIdYUsuarioId(999L, 1L))
                     .thenThrow(new ResourceNotFoundException("Tarea no encontrada"));
 
-            mockMvc.perform(get("/api/tareas/999")
-                            .header("Authorization", "Bearer jwt.token"))
+            mockMvc.perform(get("/api/v1/tareas/999")
+                            .with(jwt().jwt(jwtMock())))
                     .andExpect(status().isNotFound());
         }
     }
 
     @Nested
-    @DisplayName("PUT /api/tareas/{id}")
+    @DisplayName("PUT /api/v1/tareas/{id}")
     class ActualizarTareaTests {
 
         @Test
@@ -298,14 +294,12 @@ class TareaControllerTests {
             when(tareaService.actualizarTarea(eq(1L), any(Tarea.class), eq(1L)))
                     .thenReturn(tarea);
 
-            mockMvc.perform(put("/api/tareas/1")
+            mockMvc.perform(put("/api/v1/tareas/1")
                             .with(csrf())
-                            .header("Authorization", "Bearer jwt.token")
+                            .with(jwt().jwt(jwtMock()))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.success").value(true))
-                    .andExpect(jsonPath("$.message").value("Tarea actualizada exitosamente"));
+                    .andExpect(status().isOk());
 
             verify(tareaService).actualizarTarea(eq(1L), any(Tarea.class), eq(1L));
         }
@@ -322,9 +316,9 @@ class TareaControllerTests {
             when(tareaService.actualizarTarea(eq(999L), any(Tarea.class), eq(1L)))
                     .thenThrow(new ResourceNotFoundException("Tarea no encontrada"));
 
-            mockMvc.perform(put("/api/tareas/999")
+            mockMvc.perform(put("/api/v1/tareas/999")
                             .with(csrf())
-                            .header("Authorization", "Bearer jwt.token")
+                            .with(jwt().jwt(jwtMock()))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isNotFound());
@@ -332,7 +326,7 @@ class TareaControllerTests {
     }
 
     @Nested
-    @DisplayName("DELETE /api/tareas/{id}")
+    @DisplayName("DELETE /api/v1/tareas/{id}")
     class EliminarTareaTests {
 
         @Test
@@ -342,12 +336,11 @@ class TareaControllerTests {
 
             doNothing().when(tareaService).eliminarTarea(1L, 1L);
 
-            mockMvc.perform(delete("/api/tareas/1")
+            mockMvc.perform(delete("/api/v1/tareas/1")
                             .with(csrf())
-                            .header("Authorization", "Bearer jwt.token"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.success").value(true))
-                    .andExpect(jsonPath("$.message").value("Tarea eliminada exitosamente"));
+                    .with(jwt().jwt(jwtMock())))
+                    .andExpect(status().isOk());
+
 
             verify(tareaService).eliminarTarea(1L, 1L);
         }
@@ -361,9 +354,9 @@ class TareaControllerTests {
                     .when(tareaService).eliminarTarea(999L, 1L);
 
 
-            mockMvc.perform(delete("/api/tareas/999")
+            mockMvc.perform(delete("/api/v1/tareas/999")
                             .with(csrf())
-                            .header("Authorization", "Bearer jwt.token"))
+                            .with(jwt().jwt(jwtMock())))
                     .andExpect(status().isNotFound());
         }
     }

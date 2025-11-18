@@ -6,6 +6,7 @@ import io.github.jaredmcc4.gtm.dto.response.PageResponse;
 import io.github.jaredmcc4.gtm.dto.tarea.ActualizarTareaRequest;
 import io.github.jaredmcc4.gtm.dto.tarea.CrearTareaRequest;
 import io.github.jaredmcc4.gtm.dto.tarea.TareaDto;
+import io.github.jaredmcc4.gtm.exception.UnauthorizedException;
 import io.github.jaredmcc4.gtm.mapper.TareaMapper;
 import io.github.jaredmcc4.gtm.services.TareaService;
 import io.github.jaredmcc4.gtm.services.UsuarioService;
@@ -24,8 +25,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -47,22 +51,45 @@ public class TareaController {
     private final TareaMapper tareaMapper;
     private final JwtUtil jwtUtil;
 
+    private Long resolverUsuarioId(Jwt jwt) {
+        if (jwt != null) {
+            return jwtUtil.extraerUsuarioId(jwt.getTokenValue());
+        }
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication instanceof JwtAuthenticationToken jwtAuth) {
+            String tokenValue = jwtAuth.getToken().getTokenValue();
+            return jwtUtil.extraerUsuarioId(tokenValue);
+        }
+        throw new UnauthorizedException("Token JWT requerido.");
+    }
+
     @Operation(summary = "Obtener todas las tareas del usuario", description = "Muestra una lista de tareas ordenadas por fecha de creación descendente.")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<TareaDto>>> obtenerTareas(
             @AuthenticationPrincipal Jwt jwt,
-            @Parameter(description = "Número de página (Default: 0)") @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Tamaño de página") @RequestParam(defaultValue = "10") int size,
-            @Parameter(description = "Campo de ordenamiento") @RequestParam(defaultValue = "createdAt") String sortBy,
-            @Parameter(description = "Dirección de ordenamiento") @RequestParam(defaultValue = "DESC") String direction
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "DESC") String direction,
+            @RequestParam(required = false) Tarea.EstadoTarea estado,
+            @RequestParam(required = false) String search
     ) {
-        Long usuarioId = jwtUtil.extraerUsuarioId(jwt.getTokenValue());
-        log.info("GET /api/v1/tareas - Usuario ID: {}, Page: {}, Size: {}", usuarioId, page, size);
+        Long usuarioId = resolverUsuarioId(jwt);
 
+        log.info("GET /api/v1/tareas - Usuario ID: {}, Page: {}, Size: {}", usuarioId, page, size);
         Sort sort = Sort.by(Sort.Direction.fromString(direction), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        Page<Tarea> tareaPage = tareaService.obtenerTareasPorUsuarioId(usuarioId, pageable);
+        Page<Tarea> tareaPage;
+        if (search != null) {
+            tareaPage = tareaService.buscarTareasPorTexto(usuarioId, search, pageable);
+        } else if (estado != null) {
+            tareaPage = tareaService.filtrarTareas(usuarioId, estado, null, null, pageable);
+        } else {
+            tareaPage = tareaService.obtenerTareasPorUsuarioId(usuarioId, pageable);
+        }
+
         PageResponse<TareaDto> pageResponse = PageUtil.toPageResponse(tareaPage, tareaMapper::toDto);
 
         return ResponseEntity.ok(ApiResponse.success("Tareas obtenidas exitosamente", pageResponse));
@@ -76,7 +103,7 @@ public class TareaController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        Long usuarioId = jwtUtil.extraerUsuarioId(jwt.getTokenValue());
+        Long usuarioId = resolverUsuarioId(jwt);
         log.info("GET /api/v1/tareas/buscar - Usuario ID: {}, Texto: '{}'", usuarioId, texto);
 
         Pageable pageable = PageRequest.of(page, size);
@@ -96,7 +123,7 @@ public class TareaController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        Long usuarioId = jwtUtil.extraerUsuarioId(jwt.getTokenValue());
+        Long usuarioId = resolverUsuarioId(jwt);
         log.info("GET /api/v1/tareas/filtrar - Usuario ID: {}, Estado: {}, Prioridad: {}, Título: '{}'",
                 usuarioId, estado, prioridad, titulo);
 
@@ -115,7 +142,7 @@ public class TareaController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        Long usuarioId = jwtUtil.extraerUsuarioId(jwt.getTokenValue());
+        Long usuarioId = resolverUsuarioId(jwt);
         log.info("GET /api/v1/tareas/etiqueta/{} - Usuario ID: {}", etiquetaId, usuarioId);
 
         Pageable pageable = PageRequest.of(page, size);
@@ -131,7 +158,7 @@ public class TareaController {
             @AuthenticationPrincipal Jwt jwt,
             @Parameter(description = "Cantidad de días a futuro") @RequestParam(defaultValue = "7") int dias
     ) {
-        Long usuarioId = jwtUtil.extraerUsuarioId(jwt.getTokenValue());
+        Long usuarioId = resolverUsuarioId(jwt);
         log.info("GET /api/v1/tareas/proximas-vencer - Usuario ID: {}, Días: {}", usuarioId, dias);
 
         List<Tarea> tareas = tareaService.obtenerTareasProximasVencimiento(usuarioId, dias);
@@ -145,7 +172,7 @@ public class TareaController {
     @Operation(summary = "Obtener estadísticas de tareas", description = "Conteo de tareas por estado")
     @GetMapping("/estadisticas")
     public ResponseEntity<ApiResponse<Object>> obtenerEstadisticas(@AuthenticationPrincipal Jwt jwt) {
-        Long usuarioId = jwtUtil.extraerUsuarioId(jwt.getTokenValue());
+        Long usuarioId = resolverUsuarioId(jwt);
         log.info("GET /api/v1/tareas/estadisticas - Usuario ID: {}", usuarioId);
 
         long pendientes = tareaService.contarTareasPorEstado(usuarioId, Tarea.EstadoTarea.PENDIENTE);
@@ -169,7 +196,7 @@ public class TareaController {
             @AuthenticationPrincipal Jwt jwt,
             @Parameter(description = "ID de la tarea") @PathVariable Long id
     ) {
-        Long usuarioId = jwtUtil.extraerUsuarioId(jwt.getTokenValue());
+        Long usuarioId = resolverUsuarioId(jwt);
         log.info("GET /api/v1/tareas/{} - Usuario ID: {}", id, usuarioId);
 
         Tarea tarea = tareaService.obtenerTareaPorIdYUsuarioId(id, usuarioId);
@@ -184,7 +211,7 @@ public class TareaController {
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody CrearTareaRequest request
     ) {
-        Long usuarioId = jwtUtil.extraerUsuarioId(jwt.getTokenValue());
+        Long usuarioId = resolverUsuarioId(jwt);
         log.info("POST /api/v1/tareas - Usuario ID: {}, Título: '{}'", usuarioId, request.getTitulo());
 
         var usuario = usuarioService.obtenerUsuarioPorId(usuarioId);
@@ -210,7 +237,7 @@ public class TareaController {
             @Parameter(description = "ID de la tarea") @PathVariable Long id,
             @Valid @RequestBody ActualizarTareaRequest request
     ) {
-        Long usuarioId = jwtUtil.extraerUsuarioId(jwt.getTokenValue());
+        Long usuarioId = resolverUsuarioId(jwt);
         log.info("PUT /api/v1/tareas/{} - Usuario ID: {}", id, usuarioId);
 
         Tarea tareaActualizada = Tarea.builder()
@@ -234,7 +261,7 @@ public class TareaController {
             @AuthenticationPrincipal Jwt jwt,
             @Parameter(description = "ID de la tarea") @PathVariable Long id
     ) {
-        Long usuarioId = jwtUtil.extraerUsuarioId(jwt.getTokenValue());
+        Long usuarioId = resolverUsuarioId(jwt);
         log.info("DELETE /api/v1/tareas/{} - Usuario ID: {}", id, usuarioId);
 
         tareaService.eliminarTarea(id, usuarioId);
