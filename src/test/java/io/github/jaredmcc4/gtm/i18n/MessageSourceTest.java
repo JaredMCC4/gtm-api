@@ -1,24 +1,18 @@
 package io.github.jaredmcc4.gtm.i18n;
 
-import io.github.jaredmcc4.gtm.GtmApiApplication;
+import io.github.jaredmcc4.gtm.config.ProjectConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.MessageSource;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import java.util.Locale;
 
 import static org.assertj.core.api.Assertions.*;
 
-@SpringBootTest(classes = GtmApiApplication.class, properties = {
-        "spring.autoconfigure.exclude=" +
-                "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration," +
-                "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration," +
-                "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration," +
-                "org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration"
-})
+@SpringJUnitConfig(ProjectConfig.class)
 @TestPropertySource(locations = "classpath:application.properties")
 @DisplayName("Message Source - Integration Tests")
 class MessageSourceTest {
