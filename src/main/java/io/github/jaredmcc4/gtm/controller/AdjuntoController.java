@@ -3,6 +3,7 @@ package io.github.jaredmcc4.gtm.controller;
 import io.github.jaredmcc4.gtm.domain.Adjunto;
 import io.github.jaredmcc4.gtm.dto.adjunto.AdjuntoDto;
 import io.github.jaredmcc4.gtm.dto.response.ApiResponse;
+import io.github.jaredmcc4.gtm.exception.UnauthorizedException;
 import io.github.jaredmcc4.gtm.mapper.AdjuntoMapper;
 import io.github.jaredmcc4.gtm.services.AdjuntoService;
 import io.github.jaredmcc4.gtm.util.JwtExtractorUtil;
@@ -38,15 +39,29 @@ public class AdjuntoController {
 
     private final AdjuntoService adjuntoService;
     private final AdjuntoMapper adjuntoMapper;
+    private final JwtUtil jwtUtil;
+
+    private Long resolveUsuarioId(Jwt jwt, String authorizationHeader) {
+
+        if (jwt != null) {
+            return JwtExtractorUtil.extractUsuarioId(jwt);
+        }
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            String token = authorizationHeader.substring(7);
+            return jwtUtil.extraerUsuarioId(token);
+        }
+        throw new UnauthorizedException("No se pudo determinar el usuario autenticado");
+    }
 
     @PostMapping("/tarea/{tareaId}")
     @Operation(summary = "Subir un archivo adjunto a una tarea")
     public ResponseEntity<ApiResponse<AdjuntoDto>> subirAdjunto(
             @PathVariable Long tareaId,
             @RequestParam("file") MultipartFile file,
-            @AuthenticationPrincipal Jwt jwt) {
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader){
 
-        Long usuarioId = JwtExtractorUtil.extractUsuarioId(jwt);
+        Long usuarioId = resolveUsuarioId(jwt, authorizationHeader);
         log.info("Usuario {} subiendo adjunto a tarea {}", usuarioId, tareaId);
 
         FileValidator.validate(file);
@@ -62,9 +77,10 @@ public class AdjuntoController {
     @GetMapping("/tarea/{tareaId}")
     public ResponseEntity<ApiResponse<List<AdjuntoDto>>> obtenerAdjuntosPorTarea(
             @PathVariable Long tareaId,
-            @AuthenticationPrincipal Jwt jwt) {
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
 
-        Long usuarioId = JwtExtractorUtil.extractUsuarioId(jwt);
+        Long usuarioId = resolveUsuarioId(jwt, authorizationHeader);
         log.info("Usuario {} obteniendo adjuntos de tarea {}", usuarioId, tareaId);
 
         var adjuntos = adjuntoService.mostrarAdjuntos(tareaId, usuarioId);
@@ -79,15 +95,17 @@ public class AdjuntoController {
     @GetMapping("/{adjuntoId}/descargar")
     public ResponseEntity<Resource> descargarAdjunto(
             @PathVariable Long adjuntoId,
-            @AuthenticationPrincipal Jwt jwt) {
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
 
-        Long usuarioId = JwtExtractorUtil.extractUsuarioId(jwt);
+        Long usuarioId = resolveUsuarioId(jwt, authorizationHeader);
         log.info("Usuario {} descargando adjunto {}", usuarioId, adjuntoId);
 
+        Adjunto adjunto = adjuntoService.obtenerAdjuntoPorId(adjuntoId, usuarioId);
         Resource resource = adjuntoService.descargarAdjunto(adjuntoId, usuarioId);
 
         return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .contentType(MediaType.parseMediaType(adjunto.getMimeType()))
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         "attachment; filename=\"" + resource.getFilename() + "\"")
                 .body(resource);
@@ -97,9 +115,10 @@ public class AdjuntoController {
     @DeleteMapping("/{adjuntoId}")
     public ResponseEntity<ApiResponse<Void>> eliminarAdjunto(
             @PathVariable Long adjuntoId,
-            @AuthenticationPrincipal Jwt jwt) {
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
 
-        Long usuarioId = JwtExtractorUtil.extractUsuarioId(jwt);
+        Long usuarioId = resolveUsuarioId(jwt, authorizationHeader);
         log.info("Usuario {} eliminando adjunto {}", usuarioId, adjuntoId);
 
         adjuntoService.eliminarAdjunto(adjuntoId, usuarioId);

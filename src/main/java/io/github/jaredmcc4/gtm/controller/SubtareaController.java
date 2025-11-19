@@ -3,8 +3,10 @@ package io.github.jaredmcc4.gtm.controller;
 import io.github.jaredmcc4.gtm.domain.Subtarea;
 import io.github.jaredmcc4.gtm.dto.response.ApiResponse;
 import io.github.jaredmcc4.gtm.dto.subtarea.SubtareaDto;
+import io.github.jaredmcc4.gtm.exception.UnauthorizedException;
 import io.github.jaredmcc4.gtm.mapper.SubtareaMapper;
 import io.github.jaredmcc4.gtm.services.SubtareaService;
+import io.github.jaredmcc4.gtm.util.JwtExtractorUtil;
 import io.github.jaredmcc4.gtm.util.JwtUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -34,13 +36,25 @@ public class SubtareaController {
     private final SubtareaMapper subtareaMapper;
     private final JwtUtil jwtUtil;
 
+    private Long resolveUsuarioId(Jwt jwt, String authorizationHeader) {
+        if (jwt != null) {
+            return JwtExtractorUtil.extractUsuarioId(jwt);
+        }
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            String token = authorizationHeader.substring(7);
+            return jwtUtil.extraerUsuarioId(token);
+        }
+        throw new UnauthorizedException("No se pudo determinar el usuario autenticado");
+    }
+
     @Operation(summary = "Obtener subtareas de una tarea", description = "Muestra todas las subtareas de una tarea específica.")
     @GetMapping("/tarea/{tareaId}")
     public ResponseEntity<ApiResponse<List<SubtareaDto>>> obtenerSubtareasPorTarea(
             @AuthenticationPrincipal Jwt jwt,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Parameter(description = "ID de la tarea") @PathVariable Long tareaId
     ) {
-        Long usuarioId = jwtUtil.extraerUsuarioId(jwt.getTokenValue());
+        Long usuarioId = resolveUsuarioId(jwt, authorizationHeader);
         log.info("GET /api/v1/subtareas/tarea/{} - Usuario ID: {}", tareaId, usuarioId);
 
         List<Subtarea> subtareas = subtareaService.mostrarSubtareas(tareaId, usuarioId);
@@ -55,10 +69,11 @@ public class SubtareaController {
     @PostMapping("/tarea/{tareaId}")
     public ResponseEntity<ApiResponse<SubtareaDto>> crearSubtarea(
             @AuthenticationPrincipal Jwt jwt,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Parameter(description = "ID de la tarea") @PathVariable Long tareaId,
             @Valid @RequestBody SubtareaDto subtareaDto
     ) {
-        Long usuarioId = jwtUtil.extraerUsuarioId(jwt.getTokenValue());
+        Long usuarioId = resolveUsuarioId(jwt, authorizationHeader);
         log.info("POST /api/v1/subtareas/tarea/{} - Usuario ID: {}, Título: '{}'",
                 tareaId, usuarioId, subtareaDto.getTitulo());
 
@@ -74,10 +89,11 @@ public class SubtareaController {
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<SubtareaDto>> actualizarSubtarea(
             @AuthenticationPrincipal Jwt jwt,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Parameter(description = "ID de la subtarea") @PathVariable Long id,
             @Valid @RequestBody SubtareaDto subtareaDto
     ) {
-        Long usuarioId = jwtUtil.extraerUsuarioId(jwt.getTokenValue());
+        Long usuarioId = resolveUsuarioId(jwt, authorizationHeader);
         log.info("PUT /api/v1/subtareas/{} - Usuario ID: {}", id, usuarioId);
 
         Subtarea subtareaActualizada = subtareaMapper.toEntity(subtareaDto);
@@ -91,9 +107,10 @@ public class SubtareaController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> eliminarSubtarea(
             @AuthenticationPrincipal Jwt jwt,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Parameter(description = "ID de la subtarea") @PathVariable Long id
     ) {
-        Long usuarioId = jwtUtil.extraerUsuarioId(jwt.getTokenValue());
+        Long usuarioId = resolveUsuarioId(jwt, authorizationHeader);
         log.info("DELETE /api/v1/subtareas/{} - Usuario ID: {}", id, usuarioId);
 
         subtareaService.eliminarSubtarea(id, usuarioId);
