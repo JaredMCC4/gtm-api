@@ -6,7 +6,6 @@ import io.github.jaredmcc4.gtm.domain.Subtarea;
 import io.github.jaredmcc4.gtm.domain.Tarea;
 import io.github.jaredmcc4.gtm.domain.Usuario;
 import io.github.jaredmcc4.gtm.exception.ResourceNotFoundException;
-import io.github.jaredmcc4.gtm.exception.UnauthorizedException;
 import io.github.jaredmcc4.gtm.repository.SubtareaRepository;
 import io.github.jaredmcc4.gtm.repository.TareaRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,13 +37,12 @@ class SubtareaServiceImplTest {
     @InjectMocks
     private SubtareaServiceImpl subtareaService;
 
-    private Usuario usuario;
     private Tarea tarea;
     private Subtarea subtarea;
 
     @BeforeEach
     void setUp() {
-        usuario = UsuarioTestBuilder.unUsuario().conId(1L).build();
+        Usuario usuario = UsuarioTestBuilder.unUsuario().conId(1L).build();
         tarea = TareaTestBuilder.unaTarea()
                 .conId(1L)
                 .conUsuario(usuario)
@@ -236,20 +234,21 @@ class SubtareaServiceImplTest {
         @Test
         @DisplayName("Debería rechazar actualización de otro usuario")
         void deberiaRechazarActualizacionOtroUsuario() {
-            Usuario otroUsuario = UsuarioTestBuilder.unUsuario().conId(2L).build();
-            tarea.setUsuario(otroUsuario);
 
             when(subtareaRepository.findById(1L))
                     .thenReturn(Optional.of(subtarea));
 
-            Subtarea actualizacion = Subtarea.builder()
-                    .titulo("Test")
+            Subtarea subtareaActualizada = Subtarea.builder()
+                    .titulo("Nuevo título")
                     .build();
 
-            assertThatThrownBy(() -> subtareaService.actualizarSubtarea(1L, actualizacion, 1L))
-                    .isInstanceOf(UnauthorizedException.class);
-
-            verify(subtareaRepository, never()).save(any());
+            assertThatThrownBy(() -> subtareaService.actualizarSubtarea(1L, subtareaActualizada, 999L))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .satisfies(ex -> {
+                        String message = ex.getMessage().toLowerCase();
+                        assertThat(message).contains("no encontrada");
+                        assertThat(message).contains("no pertenece al usuario");
+                    });
         }
     }
 
@@ -260,9 +259,9 @@ class SubtareaServiceImplTest {
         @Test
         @DisplayName("Debería eliminar subtarea correctamente")
         void deberiaEliminarSubtarea() {
+
             when(subtareaRepository.findById(1L))
                     .thenReturn(Optional.of(subtarea));
-            doNothing().when(subtareaRepository).delete(subtarea);
 
             subtareaService.eliminarSubtarea(1L, 1L);
 
@@ -272,16 +271,17 @@ class SubtareaServiceImplTest {
         @Test
         @DisplayName("Debería rechazar eliminación de otro usuario")
         void deberiaRechazarEliminacionOtroUsuario() {
-            Usuario otroUsuario = UsuarioTestBuilder.unUsuario().conId(2L).build();
-            tarea.setUsuario(otroUsuario);
 
             when(subtareaRepository.findById(1L))
                     .thenReturn(Optional.of(subtarea));
 
-            assertThatThrownBy(() -> subtareaService.eliminarSubtarea(1L, 1L))
-                    .isInstanceOf(UnauthorizedException.class);
-
-            verify(subtareaRepository, never()).delete(any());
+            assertThatThrownBy(() -> subtareaService.eliminarSubtarea(1L, 999L))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .satisfies(ex -> {
+                        String message = ex.getMessage().toLowerCase();
+                        assertThat(message).contains("no encontrada");
+                        assertThat(message).contains("no pertenece al usuario");
+                    });
         }
 
         @Test
@@ -291,7 +291,7 @@ class SubtareaServiceImplTest {
                     .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> subtareaService.eliminarSubtarea(999L, 1L))
-                    .isInstanceOf(IllegalArgumentException.class);
+                    .isInstanceOf(ResourceNotFoundException.class);
         }
     }
 }

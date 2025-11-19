@@ -57,7 +57,7 @@ class FileValidatorTest {
 
             assertThatThrownBy(() -> FileValidator.validate(file))
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("Archivo está vacío");
+                    .hasMessageContaining("El archivo está vacío.");
         }
 
         @Test
@@ -74,7 +74,7 @@ class FileValidatorTest {
 
             assertThatThrownBy(() -> FileValidator.validate(file))
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("Excede el tamaño máximo permitido");
+                    .hasMessageContaining("El archivo excede el tamaño máximo permitido de 10MB.");
         }
 
         @Test
@@ -90,7 +90,7 @@ class FileValidatorTest {
 
             assertThatThrownBy(() -> FileValidator.validate(file))
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("tipo de archivo no está permitido");
+                    .hasMessageContaining("El tipo de archivo no está permitido.");
         }
 
         @Test

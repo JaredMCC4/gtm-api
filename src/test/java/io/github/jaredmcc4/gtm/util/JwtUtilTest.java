@@ -77,10 +77,9 @@ class JwtUtilTest {
         @Test
         @DisplayName("Debería validar token correcto")
         void deberiaValidarTokenCorrecto() {
-            String email = "test@example.com";
-            String token = jwtUtil.generarToken(email, 1L, List.of("USER"));
 
-            boolean esValido = jwtUtil.validarToken(token, email);
+            String token = jwtUtil.generarToken("test@example.com", 1L, List.of("USER"));
+            boolean esValido = jwtUtil.validarToken(token, "test@example.com");
 
             assertThat(esValido).isTrue();
         }
@@ -116,23 +115,20 @@ class JwtUtilTest {
             String email = "test@example.com";
             String tokenOtroSecret = otroJwtUtil.generarToken(email, 1L, List.of("USER"));
 
-            assertThatThrownBy(() -> jwtUtil.validarToken(tokenOtroSecret, email))
-                    .isInstanceOf(Exception.class);
+            boolean esValido = jwtUtil.validarToken(tokenOtroSecret, email);
+            assertThat(esValido).isFalse();
         }
 
         @Test
         @DisplayName("Debería rechazar token expirado")
         void deberiaRechazarTokenExpirado() throws InterruptedException {
-            JwtUtil jwtUtilExpirado = new JwtUtil();
-            ReflectionTestUtils.setField(jwtUtilExpirado, "secret", SECRET);
-            ReflectionTestUtils.setField(jwtUtilExpirado, "expiration", 1L); // 1ms de expiración
 
-            String email = "test@example.com";
-            String tokenExpirado = jwtUtilExpirado.generarToken(email, 1L, List.of("USER"));
+            ReflectionTestUtils.setField(jwtUtil, "expiration", 1000L);
 
-            Thread.sleep(100); // Esperar a que expire
+            String token = jwtUtil.generarToken("test@example.com", 1L, List.of("USER"));
+            Thread.sleep(2000);
 
-            boolean esValido = jwtUtil.validarToken(tokenExpirado, email);
+            boolean esValido = jwtUtil.validarToken(token, "test@example.com");
 
             assertThat(esValido).isFalse();
         }
@@ -199,7 +195,11 @@ class JwtUtilTest {
 
             assertThat(claims.getSubject()).isEqualTo(email);
             assertThat(claims.get("usuarioId", Long.class)).isEqualTo(usuarioId);
-            assertThat(claims.get("roles", List.class)).isEqualTo(roles);
+
+            @SuppressWarnings("unchecked")
+            List<String> rolesExtraidos = (List<String>) claims.get("roles", List.class);
+
+            assertThat(rolesExtraidos).containsExactlyInAnyOrder("USER");
             assertThat(claims.getIssuedAt()).isNotNull();
             assertThat(claims.getExpiration()).isNotNull();
         }
@@ -232,7 +232,7 @@ class JwtUtilTest {
 
             Thread.sleep(50);
 
-            boolean esValido = jwtUtil.validarToken(token, email);
+            boolean esValido = jwtUtilExpirado.validarToken(token, email);
 
             assertThat(esValido).isFalse();
         }
@@ -263,6 +263,7 @@ class JwtUtilTest {
 
             assertThat(token).isNotNull();
             assertThat(jwtUtil.extraerEmail(token)).isEmpty();
+            assertThat(token).isNotEmpty();
         }
 
         @Test

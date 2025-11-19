@@ -89,7 +89,7 @@ class EtiquetaServiceImplTest {
 
             assertThatThrownBy(() -> etiquetaService.crearEtiqueta(nuevaEtiqueta, usuario))
                     .isInstanceOf(DuplicateResourceException.class)
-                    .hasMessageContaining("ya existe");
+                    .hasMessageContaining("Ya existe una etiqueta con el nombre: " + nuevaEtiqueta.getNombre());
 
             verify(etiquetaRepository, never()).save(any());
         }

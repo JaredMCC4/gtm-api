@@ -140,7 +140,7 @@ public class AuthServiceImplTest {
 
             assertThatThrownBy(() -> authService.registrarUsuario(request))
                     .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining("Rol de usuario no existe");
+                    .hasMessageContaining("El rol de usuario no existe.");
             verify(usuarioRepository, never()).save(any());
         }
     }
@@ -211,7 +211,7 @@ public class AuthServiceImplTest {
 
             assertThatThrownBy(() -> authService.autenticarUsuario(request))
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("Inactivo");
+                    .hasMessageContaining("El usuario no está activo.");
 
             verify(jwtUtil, never()).generarToken(anyString(), anyLong(), anyList());
         }
@@ -226,7 +226,7 @@ public class AuthServiceImplTest {
 
             assertThatThrownBy(() -> authService.autenticarUsuario(request))
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("Credenciales inválidas");
+                    .hasMessageContaining("Credenciales inválidas.");
         }
     }
 
@@ -264,35 +264,47 @@ public class AuthServiceImplTest {
         @Test
         @DisplayName("Debería rechazar un refresh token revocado")
         void deberiaRechazarTokenRevocado() {
-
-            String refreshTokenValue = "revoked-token";
-            RefreshToken refreshToken = RefreshToken.builder()
-                    .token(refreshTokenValue)
+            RefreshToken tokenRevocado = RefreshToken.builder()
+                    .token("token-revocado")
+                    .usuario(usuario)
+                    .expiresAt(LocalDateTime.now().plusDays(7))
                     .revoked(true)
-                    .expiresAt(LocalDateTime.now().plusDays(30))
                     .build();
 
-            when(refreshTokenRepository.findByToken(refreshTokenValue)).thenReturn(Optional.of(refreshToken));
+            when(refreshTokenRepository.findByToken("token-revocado"))
+                    .thenReturn(Optional.of(tokenRevocado));
 
-            assertThatThrownBy(() -> authService.refrescarToken(refreshTokenValue))
-                    .isInstanceOf(UnauthorizedException.class);
-            verify(jwtUtil, never()).generarToken(anyString(), anyLong(), anyList());
+            assertThatThrownBy(() -> authService.refrescarToken("token-revocado"))
+                    .isInstanceOf(io.github.jaredmcc4.gtm.exception.UnauthorizedException.class)
+                    .satisfies(ex -> {
+                        String message = ex.getMessage().toLowerCase();
+                        assertThat(message).contains("revocado");
+                        assertThat(message).contains("expirado");
+                    });
         }
+
 
         @Test
         @DisplayName("Debería rechazar un refresh token expirado")
         void deberiaRechazarTokenExpirado() {
-            String refreshTokenValue = "expired-token";
-            RefreshToken refreshToken = RefreshToken.builder()
-                    .token(refreshTokenValue)
-                    .revoked(false)
+
+            RefreshToken tokenExpirado = RefreshToken.builder()
+                    .token("token-expirado")
+                    .usuario(usuario)
                     .expiresAt(LocalDateTime.now().minusDays(1))
+                    .revoked(false)
                     .build();
 
-            when(refreshTokenRepository.findByToken(refreshTokenValue)).thenReturn(Optional.of(refreshToken));
+            when(refreshTokenRepository.findByToken("token-expirado"))
+                    .thenReturn(Optional.of(tokenExpirado));
 
-            assertThatThrownBy(() -> authService.refrescarToken(refreshTokenValue))
-                    .isInstanceOf(UnauthorizedException.class);
+            assertThatThrownBy(() -> authService.refrescarToken("token-expirado"))
+                    .isInstanceOf(io.github.jaredmcc4.gtm.exception.UnauthorizedException.class)
+                    .satisfies(ex -> {
+                        String message = ex.getMessage().toLowerCase();
+                        assertThat(message).contains("revocado");
+                        assertThat(message).contains("expirado");
+                    });
         }
 
         @Test

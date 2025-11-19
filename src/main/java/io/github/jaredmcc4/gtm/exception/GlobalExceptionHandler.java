@@ -48,6 +48,20 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error("Errores de validación", errors));
     }
 
+    @ExceptionHandler(NumberFormatException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNumberFormatException(NumberFormatException ex) {
+        log.error("Error de formato de número: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error("Formato de número inválido en la petición", null));
+    }
+
+    @ExceptionHandler(NullPointerException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNullPointerException(NullPointerException ex) {
+        log.error("Error de null pointer: {}", ex.getMessage(), ex);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error("Datos requeridos faltantes en la petición", null));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {
         log.error("Error interno del servidor: {}", ex.getMessage(), ex);

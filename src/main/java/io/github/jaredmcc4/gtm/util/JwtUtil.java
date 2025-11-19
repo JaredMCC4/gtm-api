@@ -1,6 +1,7 @@
 package io.github.jaredmcc4.gtm.util;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
@@ -46,7 +47,8 @@ public class JwtUtil {
     }
 
     public String extraerEmail(String token) {
-        return extraerClaims(token).getSubject();
+        String email = extraerClaims(token).getSubject();
+        return email == null ? "" : email;
     }
 
     public Long extraerUsuarioId(String token) {
@@ -59,11 +61,24 @@ public class JwtUtil {
     }
 
     public boolean validarToken(String token, String email) {
-        String emailToken = extraerEmail(token);
-        return emailToken.equals(email) && !isTokenExpirado(token);
+
+        try {
+            String emailToken = extraerEmail(token);
+            return emailToken.equals(email) && !isTokenExpirado(token);
+        } catch (ExpiredJwtException e) {
+            log.warn("Token expirado: {}", e.getMessage());
+            return false;
+        } catch (Exception e) {
+            log.error("Error validando token: {}", e.getMessage());
+            return false;
+        }
     }
 
     private boolean isTokenExpirado(String token) {
-        return extraerClaims(token).getExpiration().before(new Date());
+        try {
+            return extraerClaims(token).getExpiration().before(new Date());
+        } catch (ExpiredJwtException e) {
+            return true;
+        }
     }
 }
