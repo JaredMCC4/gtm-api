@@ -90,7 +90,7 @@ class UsuarioControllerTests {
     }
 
     @Nested
-    @DisplayName("PUT /api/v1/usuarios/cambiar-password")
+    @DisplayName("PATCH /api/v1/usuarios/cambiar-password")
     class CambiarPasswordTests {
 
         @Test
@@ -104,7 +104,7 @@ class UsuarioControllerTests {
 
             doNothing().when(usuarioService).cambiarPassword(1L, "OldPassword123!", "NewPassword123!");
 
-            mockMvc.perform(put("/api/v1/usuarios/cambiar-password")
+            mockMvc.perform(patch("/api/v1/usuarios/cambiar-password")
                             .with(csrf())
                             .header("Authorization", "Bearer token")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -125,7 +125,7 @@ class UsuarioControllerTests {
                     "NewPassword123!"
             );
 
-            mockMvc.perform(put("/api/v1/usuarios/cambiar-password")
+            mockMvc.perform(patch("/api/v1/usuarios/cambiar-password")
                             .with(csrf())
                             .header("Authorization", "Bearer token")
                             .contentType(MediaType.APPLICATION_JSON)
