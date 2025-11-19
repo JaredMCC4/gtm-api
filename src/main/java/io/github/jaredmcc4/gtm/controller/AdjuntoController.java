@@ -5,7 +5,9 @@ import io.github.jaredmcc4.gtm.dto.adjunto.AdjuntoDto;
 import io.github.jaredmcc4.gtm.dto.response.ApiResponse;
 import io.github.jaredmcc4.gtm.mapper.AdjuntoMapper;
 import io.github.jaredmcc4.gtm.services.AdjuntoService;
+import io.github.jaredmcc4.gtm.util.JwtExtractorUtil;
 import io.github.jaredmcc4.gtm.util.JwtUtil;
+import io.github.jaredmcc4.gtm.validator.FileValidator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -36,75 +38,71 @@ public class AdjuntoController {
 
     private final AdjuntoService adjuntoService;
     private final AdjuntoMapper adjuntoMapper;
-    private final JwtUtil jwtUtil;
 
-    @Operation(summary = "Subir archivo adjunto", description = "Sube un archivo y lo vincula a una tarea (máx 10MB).")
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE)
-    )
-    @PostMapping(value = "/tarea/{tareaId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping("/tarea/{tareaId}")
+    @Operation(summary = "Subir un archivo adjunto a una tarea")
     public ResponseEntity<ApiResponse<AdjuntoDto>> subirAdjunto(
-            @AuthenticationPrincipal Jwt jwt,
-            @Parameter(description = "ID de la tarea.") @PathVariable Long tareaId,
-            @Parameter(description = "Archivo a subir.") @RequestParam("file") MultipartFile file
-    ) {
-        Long usuarioId = jwtUtil.extraerUsuarioId(jwt.getTokenValue());
-        log.info("POST /api/v1/adjuntos/tarea/{} - Usuario ID: {}, Archivo: '{}'",
-                tareaId, usuarioId, file.getOriginalFilename());
+            @PathVariable Long tareaId,
+            @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal Jwt jwt) {
 
-        Adjunto adjunto = adjuntoService.subirAdjunto(tareaId, file, usuarioId);
-        AdjuntoDto adjuntoDto = adjuntoMapper.toDto(adjunto);
+        Long usuarioId = JwtExtractorUtil.extractUsuarioId(jwt);
+        log.info("Usuario {} subiendo adjunto a tarea {}", usuarioId, tareaId);
+
+        FileValidator.validate(file);
+
+        var adjunto = adjuntoService.subirAdjunto(tareaId, file, usuarioId);
+        var dto = adjuntoMapper.toDto(adjunto);
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Archivo subido exitosamente", adjuntoDto));
+                .body(ApiResponse.success("Archivo subido exitosamente", dto));
     }
 
     @Operation(summary = "Obtener adjuntos de una tarea", description = "Muestra todos los archivos adjuntos de una tarea.")
     @GetMapping("/tarea/{tareaId}")
     public ResponseEntity<ApiResponse<List<AdjuntoDto>>> obtenerAdjuntosPorTarea(
-            @AuthenticationPrincipal Jwt jwt,
-            @Parameter(description = "ID de la tarea") @PathVariable Long tareaId
-    ) {
-        Long usuarioId = jwtUtil.extraerUsuarioId(jwt.getTokenValue());
-        log.info("GET /api/v1/adjuntos/tarea/{} - Usuario ID: {}", tareaId, usuarioId);
+            @PathVariable Long tareaId,
+            @AuthenticationPrincipal Jwt jwt) {
 
-        List<Adjunto> adjuntos = adjuntoService.mostrarAdjuntos(tareaId, usuarioId);
-        List<AdjuntoDto> adjuntosDto = adjuntos.stream()
+        Long usuarioId = JwtExtractorUtil.extractUsuarioId(jwt);
+        log.info("Usuario {} obteniendo adjuntos de tarea {}", usuarioId, tareaId);
+
+        var adjuntos = adjuntoService.mostrarAdjuntos(tareaId, usuarioId);
+        var dtos = adjuntos.stream()
                 .map(adjuntoMapper::toDto)
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(ApiResponse.success("Adjuntos obtenidos exitosamente", adjuntosDto));
+        return ResponseEntity.ok(ApiResponse.success("Adjuntos recuperados exitosamente", dtos));
     }
 
     @Operation(summary = "Descargar archivo adjunto", description = "Descarga el archivo seleccionado.")
-    @GetMapping("/{id}/descargar")
+    @GetMapping("/{adjuntoId}/descargar")
     public ResponseEntity<Resource> descargarAdjunto(
-            @AuthenticationPrincipal Jwt jwt,
-            @Parameter(description = "ID del adjunto") @PathVariable Long id
-    ) {
-        Long usuarioId = jwtUtil.extraerUsuarioId(jwt.getTokenValue());
-        log.info("GET /api/v1/adjuntos/{}/descargar - Usuario ID: {}", id, usuarioId);
+            @PathVariable Long adjuntoId,
+            @AuthenticationPrincipal Jwt jwt) {
 
-        Resource resource = adjuntoService.descargarAdjunto(id, usuarioId);
-        Adjunto adjunto = adjuntoService.obtenerAdjuntoPorId(id, usuarioId);
+        Long usuarioId = JwtExtractorUtil.extractUsuarioId(jwt);
+        log.info("Usuario {} descargando adjunto {}", usuarioId, adjuntoId);
+
+        Resource resource = adjuntoService.descargarAdjunto(adjuntoId, usuarioId);
 
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(adjunto.getMimeType()))
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + adjunto.getNombre() + "\"")
+                        "attachment; filename=\"" + resource.getFilename() + "\"")
                 .body(resource);
     }
 
     @Operation(summary = "Eliminar archivo adjunto", description = "Elimina un archivo del sistema y de la base de datos.")
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{adjuntoId}")
     public ResponseEntity<ApiResponse<Void>> eliminarAdjunto(
-            @AuthenticationPrincipal Jwt jwt,
-            @Parameter(description = "ID del adjunto") @PathVariable Long id
-    ) {
-        Long usuarioId = jwtUtil.extraerUsuarioId(jwt.getTokenValue());
-        log.info("DELETE /api/v1/adjuntos/{} - Usuario ID: {}", id, usuarioId);
+            @PathVariable Long adjuntoId,
+            @AuthenticationPrincipal Jwt jwt) {
 
-        adjuntoService.eliminarAdjunto(id, usuarioId);
+        Long usuarioId = JwtExtractorUtil.extractUsuarioId(jwt);
+        log.info("Usuario {} eliminando adjunto {}", usuarioId, adjuntoId);
+
+        adjuntoService.eliminarAdjunto(adjuntoId, usuarioId);
 
         return ResponseEntity.ok(ApiResponse.success("Adjunto eliminado exitosamente", null));
     }

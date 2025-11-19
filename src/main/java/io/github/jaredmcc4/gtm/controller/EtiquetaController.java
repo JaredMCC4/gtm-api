@@ -3,9 +3,11 @@ package io.github.jaredmcc4.gtm.controller;
 import io.github.jaredmcc4.gtm.domain.Etiqueta;
 import io.github.jaredmcc4.gtm.dto.etiqueta.EtiquetaDto;
 import io.github.jaredmcc4.gtm.dto.response.ApiResponse;
+import io.github.jaredmcc4.gtm.exception.UnauthorizedException;
 import io.github.jaredmcc4.gtm.mapper.EtiquetaMapper;
 import io.github.jaredmcc4.gtm.services.EtiquetaService;
 import io.github.jaredmcc4.gtm.services.UsuarioService;
+import io.github.jaredmcc4.gtm.util.JwtExtractorUtil;
 import io.github.jaredmcc4.gtm.util.JwtUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -27,19 +29,30 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/v1/etiquetas")
 @RequiredArgsConstructor
-@SecurityRequirement(name = "bearerAuth")
 @Tag(name = "Etiquetas", description = "Gestión de etiquetas personalizadas para tareas.")
 public class EtiquetaController {
 
     private final EtiquetaService etiquetaService;
-    private final UsuarioService usuarioService;
     private final EtiquetaMapper etiquetaMapper;
+    private final UsuarioService usuarioService;
     private final JwtUtil jwtUtil;
+
+    private Long resolveUsuarioId(Jwt jwt, String authorizationHeader) {
+        if (jwt != null) {
+            return JwtExtractorUtil.extractUsuarioId(jwt);
+        }
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            String token = authorizationHeader.substring(7);
+            return jwtUtil.extraerUsuarioId(token);
+        }
+        throw new UnauthorizedException("No se pudo determinar el usuario autenticado");
+    }
 
     @Operation(summary = "Obtener todas las etiquetas del usuario", description = "Lista completa de etiquetas personalizadas.")
     @GetMapping
-    public ResponseEntity<ApiResponse<List<EtiquetaDto>>> obtenerEtiquetas(@AuthenticationPrincipal Jwt jwt) {
-        Long usuarioId = jwtUtil.extraerUsuarioId(jwt.getTokenValue());
+    public ResponseEntity<ApiResponse<List<EtiquetaDto>>> obtenerEtiquetas(@AuthenticationPrincipal Jwt jwt,
+                                                                           @RequestHeader(value = "Authorization", required = false) String authorizationHeader ){
+        Long usuarioId = resolveUsuarioId(jwt, authorizationHeader);
         log.info("GET /api/v1/etiquetas - Usuario ID: {}", usuarioId);
 
         List<Etiqueta> etiquetas = etiquetaService.obtenerEtiquetasPorUsuarioId(usuarioId);
@@ -54,9 +67,10 @@ public class EtiquetaController {
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<EtiquetaDto>> obtenerEtiquetaPorId(
             @AuthenticationPrincipal Jwt jwt,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Parameter(description = "ID de la etiqueta") @PathVariable Long id
     ) {
-        Long usuarioId = jwtUtil.extraerUsuarioId(jwt.getTokenValue());
+        Long usuarioId = resolveUsuarioId(jwt, authorizationHeader);
         log.info("GET /api/v1/etiquetas/{} - Usuario ID: {}", id, usuarioId);
 
         Etiqueta etiqueta = etiquetaService.obtenerEtiquetaPorIdYUsuarioId(id, usuarioId);
@@ -69,9 +83,10 @@ public class EtiquetaController {
     @PostMapping
     public ResponseEntity<ApiResponse<EtiquetaDto>> crearEtiqueta(
             @AuthenticationPrincipal Jwt jwt,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Valid @RequestBody EtiquetaDto etiquetaDto
     ) {
-        Long usuarioId = jwtUtil.extraerUsuarioId(jwt.getTokenValue());
+        Long usuarioId = resolveUsuarioId(jwt, authorizationHeader);
         log.info("POST /api/v1/etiquetas - Usuario ID: {}, Nombre: '{}'", usuarioId, etiquetaDto.getNombre());
 
         var usuario = usuarioService.obtenerUsuarioPorId(usuarioId);
@@ -88,10 +103,11 @@ public class EtiquetaController {
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<EtiquetaDto>> actualizarEtiqueta(
             @AuthenticationPrincipal Jwt jwt,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Parameter(description = "ID de la etiqueta") @PathVariable Long id,
             @Valid @RequestBody EtiquetaDto etiquetaDto
     ) {
-        Long usuarioId = jwtUtil.extraerUsuarioId(jwt.getTokenValue());
+        Long usuarioId = resolveUsuarioId(jwt, authorizationHeader);
         log.info("PUT /api/v1/etiquetas/{} - Usuario ID: {}", id, usuarioId);
 
         Etiqueta etiquetaActualizada = etiquetaMapper.toEntity(etiquetaDto);
@@ -105,9 +121,10 @@ public class EtiquetaController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> eliminarEtiqueta(
             @AuthenticationPrincipal Jwt jwt,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Parameter(description = "ID de la etiqueta") @PathVariable Long id
     ) {
-        Long usuarioId = jwtUtil.extraerUsuarioId(jwt.getTokenValue());
+        Long usuarioId = resolveUsuarioId(jwt, authorizationHeader);
         log.info("DELETE /api/v1/etiquetas/{} - Usuario ID: {}", id, usuarioId);
 
         etiquetaService.eliminarEtiqueta(id, usuarioId);
