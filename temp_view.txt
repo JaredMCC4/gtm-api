@@ -1,0 +1,261 @@
+package io.github.jaredmcc4.gtm.repository;
+
+import io.github.jaredmcc4.gtm.domain.Etiqueta;
+import io.github.jaredmcc4.gtm.domain.Rol;
+import io.github.jaredmcc4.gtm.domain.Tarea;
+import io.github.jaredmcc4.gtm.domain.Usuario;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.test.context.TestPropertySource;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
+import static org.assertj.core.api.Assertions.*;
+
+@DataJpaTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@TestPropertySource(locations = "classpath:application.properties")
+@DisplayName("TareaRepository - Integration Tests")
+class TareaRepositoryTest {
+
+    @Autowired
+    private TestEntityManager entityManager;
+
+    @Autowired
+    private TareaRepository tareaRepository;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private RolRepository rolRepository;
+
+    @Autowired
+    private EtiquetaRepository etiquetaRepository;
+
+    private Usuario usuario;
+    private Pageable pageable;
+
+    @BeforeEach
+    void setUp() {
+        Rol rolUser = rolRepository.findByNombreRol("USER")
+                .orElseGet(() -> rolRepository.save(Rol.builder().nombreRol("USER").build()));
+
+        usuario = Usuario.builder()
+                .email("test@example.com")
+                .contrasenaHash("$2a$12$hash")
+                .nombreUsuario("Usuario Test")
+                .activo(true)
+                .roles(Set.of(rolUser))
+                .build();
+        usuario = usuarioRepository.save(usuario);
+        entityManager.flush();
+
+        pageable = PageRequest.of(0, 10);
+    }
+
+    @Nested
+    @DisplayName("findByUsuarioId()")
+    class FindByUsuarioIdTests {
+
+        @Test
+        @DisplayName("Debería encontrar las tareas del usuario")
+        void deberiaEncontrarTareasDelUsuario() {
+
+            crearTarea("Tarea 1", usuario);
+            crearTarea("Tarea 2", usuario);
+            entityManager.flush();
+
+            Page<Tarea> resultado = tareaRepository.findByUsuarioId(usuario.getId(), pageable);
+
+            assertThat(resultado.getContent()).hasSize(2);
+            assertThat(resultado.getContent())
+                    .extracting("titulo")
+                    .containsExactlyInAnyOrder("Tarea 1", "Tarea 2");
+        }
+
+        @Test
+        @DisplayName("No debería retornar tareas de otros usuarios")
+        void noDeberiaRetornarTareasDeOtrosUsuarios() {
+
+            Usuario otroUsuario = Usuario.builder()
+                    .email("otro@example.com")
+                    .contrasenaHash("$2a$12$hash")
+                    .nombreUsuario("Otro Usuario")
+                    .activo(true)
+                    .build();
+            otroUsuario = usuarioRepository.save(otroUsuario);
+
+            crearTarea("Tarea Usuario 1", usuario);
+            crearTarea("Tarea Otro Usuario", otroUsuario);
+            entityManager.flush();
+
+            Page<Tarea> resultado = tareaRepository.findByUsuarioId(usuario.getId(), pageable);
+
+            assertThat(resultado.getContent()).hasSize(1);
+            assertThat(resultado.getContent().get(0).getTitulo()).isEqualTo("Tarea Usuario 1");
+        }
+    }
+
+    @Nested
+    @DisplayName("findByIdAndUsuarioId()")
+    class FindByIdAndUsuarioIdTests {
+
+        @Test
+        @DisplayName("Debería encontrar tarea por ID y usuario")
+        void deberiaEncontrarTareaPorIdYUsuario() {
+
+            Tarea tarea = crearTarea("Mi Tarea", usuario);
+            entityManager.flush();
+
+            Optional<Tarea> resultado = tareaRepository.findByIdAndUsuarioId(
+                    tarea.getId(),
+                    usuario.getId()
+            );
+
+            assertThat(resultado).isPresent();
+            assertThat(resultado.get().getTitulo()).isEqualTo("Mi Tarea");
+        }
+
+        @Test
+        @DisplayName("No debería encontrar tareas de otro usuario")
+        void noDeberiaEncontrarTareaDeOtroUsuario() {
+
+            Usuario otroUsuario = Usuario.builder()
+                    .email("otro@example.com")
+                    .contrasenaHash("$2a$12$hash")
+                    .nombreUsuario("Otro Usuario")
+                    .activo(true)
+                    .build();
+            otroUsuario = usuarioRepository.save(otroUsuario);
+
+            Tarea tarea = crearTarea("Tarea Otro", otroUsuario);
+            entityManager.flush();
+
+            Optional<Tarea> resultado = tareaRepository.findByIdAndUsuarioId(
+                    tarea.getId(),
+                    usuario.getId()
+            );
+
+            assertThat(resultado).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("findByFilters()")
+    class FindByFiltersTests {
+
+        @Test
+        @DisplayName("Debería filtrar por estado")
+        void deberiaFiltrarPorEstado() {
+
+            crearTareaConEstado("Tarea Pendiente", Tarea.EstadoTarea.PENDIENTE);
+            crearTareaConEstado("Tarea Completada", Tarea.EstadoTarea.COMPLETADA);
+            entityManager.flush();
+
+            Page<Tarea> resultado = tareaRepository.findByFilters(
+                    usuario.getId(),
+                    Tarea.EstadoTarea.PENDIENTE,
+                    null,
+                    null,
+                    pageable
+            );
+
+            assertThat(resultado.getContent()).hasSize(1);
+            assertThat(resultado.getContent().get(0).getEstado())
+                    .isEqualTo(Tarea.EstadoTarea.PENDIENTE);
+        }
+
+        @Test
+        @DisplayName("Debería filtrar por prioridad")
+        void deberiaFiltrarPorPrioridad() {
+
+            crearTareaConPrioridad("Tarea Alta", Tarea.Prioridad.ALTA);
+            crearTareaConPrioridad("Tarea Baja", Tarea.Prioridad.BAJA);
+            entityManager.flush();
+
+            Page<Tarea> resultado = tareaRepository.findByFilters(
+                    usuario.getId(),
+                    null,
+                    Tarea.Prioridad.ALTA,
+                    null,
+                    pageable
+            );
+
+            assertThat(resultado.getContent()).hasSize(1);
+            assertThat(resultado.getContent().get(0).getPrioridad())
+                    .isEqualTo(Tarea.Prioridad.ALTA);
+        }
+
+        @Test
+        @DisplayName("Debería filtrar por etiqueta")
+        void deberiaFiltrarPorEtiqueta() {
+
+            Etiqueta etiqueta1 = crearEtiqueta("Trabajo");
+            Etiqueta etiqueta2 = crearEtiqueta("Personal");
+
+            Tarea tarea1 = crearTarea("Tarea Trabajo", usuario);
+            tarea1.setEtiquetas(Set.of(etiqueta1));
+            tareaRepository.save(tarea1);
+
+            Tarea tarea2 = crearTarea("Tarea Personal", usuario);
+            tarea2.setEtiquetas(Set.of(etiqueta2));
+            tareaRepository.save(tarea2);
+
+            entityManager.flush();
+
+            Page<Tarea> resultado = tareaRepository.findByUsuarioIdAndEtiquetaId(
+                    usuario.getId(),
+                    etiqueta1.getId(),
+                    pageable
+            );
+
+            assertThat(resultado.getContent()).hasSize(1);
+            assertThat(resultado.getContent().get(0).getTitulo()).isEqualTo("Tarea Trabajo");
+        }
+
+        @Test
+        @DisplayName("Debería combinar múltiples filtros")
+        void deberiaCombinarMultiplesFiltros() {
+
+            Etiqueta etiqueta = crearEtiqueta("Urgente");
+
+            crearTareaCompleta("Tarea 1",
+                    Tarea.EstadoTarea.PENDIENTE,
+                    Tarea.Prioridad.ALTA,
+                    etiqueta);
+
+            crearTareaCompleta("Tarea 2",
+                    Tarea.EstadoTarea.PENDIENTE,
+                    Tarea.Prioridad.BAJA,
+                    etiqueta);
+
+            entityManager.flush();
+
+            Page<Tarea> resultado = tareaRepository.findByFilters(
+                    usuario.getId(),
+                    Tarea.EstadoTarea.PENDIENTE,
+                    Tarea.Prioridad.ALTA,
+                    null,
+                    pageable
+            );
+
+            assertThat(resultado.getContent()).hasSize(1);
+            assertThat(resultado.getContent().get(0).getTitulo()).isEqualTo("Tarea 1");
+        }
+    }
+
+    @Nested
+

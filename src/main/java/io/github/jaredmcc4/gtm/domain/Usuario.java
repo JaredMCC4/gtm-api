@@ -9,6 +9,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -17,7 +19,9 @@ import java.time.LocalDateTime;
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "usuarios")
+@Table(name = "usuarios", indexes = {
+        @Index(name = "idx_usuario_email", columnList = "email", unique = true)
+})
 public class Usuario {
 
     @Id
@@ -49,13 +53,26 @@ public class Usuario {
     @Builder.Default
     private boolean activo = true;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
         name = "usuarios_roles",
         joinColumns = @JoinColumn(name = "usuario_id"),
         inverseJoinColumns = @JoinColumn(name = "role_id"))
     @Builder.Default
-    private java.util.Set<Rol> roles = new java.util.HashSet<>();
+    private Set<Rol> roles = new HashSet<>();
+
+    public void setRoles(Set<Rol> roles) {
+        this.roles = roles == null ? new HashSet<>() : new HashSet<>(roles);
+    }
+
+    public static class UsuarioBuilder {
+
+        public UsuarioBuilder roles(Set<Rol> roles) {
+            this.roles$value = roles == null ? new HashSet<>() : new HashSet<>(roles);
+            this.roles$set = true;
+            return this;
+        }
+    }
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

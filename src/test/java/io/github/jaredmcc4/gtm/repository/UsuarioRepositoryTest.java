@@ -11,6 +11,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.TestPropertySource;
 
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
@@ -111,13 +112,15 @@ class UsuarioRepositoryTest {
     @Test
     @DisplayName("Debería cargar al usuario con sus roles usando findByEmailWithRoles")
     void deberiaCargUsuarioConRoles() {
+        Rol rolUser = rolRepository.findByNombreRol("USER")
+                .orElseGet(() -> rolRepository.save(Rol.builder().nombreRol("USER").build()));
 
         Usuario usuario = Usuario.builder()
                 .email("withroles@example.com")
                 .contrasenaHash("$2a$12$hashedPassword")
                 .nombreUsuario("Usuario Con Roles")
                 .activo(true)
-                .roles(Set.of(rolUser))
+                .roles(new HashSet<>(Set.of(rolUser)))
                 .build();
         usuarioRepository.save(usuario);
         entityManager.flush();

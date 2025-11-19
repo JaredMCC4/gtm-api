@@ -9,5 +9,10 @@ import java.util.Optional;
 public interface EtiquetaRepository extends JpaRepository<Etiqueta, Long> {
     public List<Etiqueta> findByUsuarioId(Long usuarioId);
     public Optional<Etiqueta> findByUsuarioIdAndNombre(Long usuarioId, String nombre);
-    public boolean existsByUsuarioIdAndNombre(Long usuarioId, String nombre);
+
+    default boolean existsByUsuarioIdAndNombre(Long usuarioId, String nombre) {
+        return findByUsuarioIdAndNombre(usuarioId, nombre)
+                .map(etiqueta -> etiqueta.getNombre().equals(nombre))
+                .orElse(false);
+    }
 }

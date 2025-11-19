@@ -67,6 +67,20 @@ public class Tarea {
     @Builder.Default
     private Set<Etiqueta> etiquetas = new HashSet<>();
 
+    public void setEtiquetas(Set<Etiqueta> etiquetas) {
+        this.etiquetas = etiquetas == null ? new HashSet<>() : new HashSet<>(etiquetas);
+    }
+
+    public static class TareaBuilder {
+        private Set<Etiqueta> etiquetas = new HashSet<>();
+
+        public TareaBuilder etiquetas(Set<Etiqueta> etiquetas) {
+            this.etiquetas = etiquetas == null ? new HashSet<>() : new HashSet<>(etiquetas);
+            return this;
+        }
+    }
+
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -82,4 +96,6 @@ public class Tarea {
     public enum EstadoTarea {
         PENDIENTE, COMPLETADA, CANCELADA
     }
+
+
 }

@@ -153,6 +153,7 @@ class UsuarioServiceImplTest {
             String passwordActual = "Password123,";
             String passwordNueva = "password456A!";
             String hashNuevo = "$2b$12$14nGIS/IcmCKAKJpyfpjquE/Su.TdACxrZ2wptmvPjbQ1c8iFX84m";
+            String hashActual = usuarioBase.getContrasenaHash();
 
             when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuarioBase));
             when(passwordEncoder.matches(passwordActual, usuarioBase.getContrasenaHash())).thenReturn(true);
@@ -162,7 +163,7 @@ class UsuarioServiceImplTest {
 
             usuarioService.cambiarPassword(1L, passwordActual, passwordNueva);
 
-            verify(passwordEncoder).matches(passwordActual, usuarioBase.getContrasenaHash());
+            verify(passwordEncoder).matches(passwordActual, hashActual);
             verify(passwordEncoder).encode(passwordNueva);
             verify(usuarioRepository).save(argThat(usuario ->
                     usuario.getContrasenaHash().equals(hashNuevo)
@@ -213,7 +214,7 @@ class UsuarioServiceImplTest {
 
             assertThatThrownBy(() -> usuarioService.cambiarPassword(1L, passwordActual, passwordNueva))
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("Al menos 8 carácteres");
+                    .hasMessageContaining("La contraseña nueva debe tener al menos 8 caracteres.");
 
             verify(usuarioRepository, never()).save(any());
         }
@@ -228,7 +229,7 @@ class UsuarioServiceImplTest {
 
             assertThatThrownBy(() -> usuarioService.cambiarPassword(1L, passwordActual, null))
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("Al menos 8 carácteres");
+                    .hasMessageContaining("La contraseña nueva debe tener al menos 8 caracteres.");
 
             verify(usuarioRepository, never()).save(any());
         }

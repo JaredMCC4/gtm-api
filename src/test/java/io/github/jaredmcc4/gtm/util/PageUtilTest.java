@@ -45,7 +45,7 @@ class PageUtilTest {
             PageResponse<String> result = PageUtil.toPageResponse(page, num -> "Número: " + num);
 
             assertThat(result.getContent())
-                    .containsExactly("Número 1", "Número 2", "Número 3");
+                    .containsExactly("Número: 1", "Número: 2", "Número: 3");
         }
 
         @Test

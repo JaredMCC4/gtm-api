@@ -103,8 +103,6 @@ class AdjuntoServiceImplTest {
                     new byte[0]
             );
 
-            when(tareaService.obtenerTareaPorIdYUsuarioId(1L, 1L)).thenReturn(tarea);
-
             assertThatThrownBy(() -> adjuntoService.subirAdjunto(1L, archivoVacio, 1L))
                     .isInstanceOf(IllegalArgumentException.class);
 
