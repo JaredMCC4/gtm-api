@@ -13,7 +13,6 @@ import java.util.Locale;
 import static org.assertj.core.api.Assertions.*;
 
 @SpringJUnitConfig(ProjectConfig.class)
-@TestPropertySource(locations = "classpath:application.properties")
 @DisplayName("Message Source - Integration Tests")
 class MessageSourceTest {
 

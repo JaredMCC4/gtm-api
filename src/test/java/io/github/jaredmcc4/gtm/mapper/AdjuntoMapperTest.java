@@ -4,8 +4,6 @@ import io.github.jaredmcc4.gtm.domain.Adjunto;
 import io.github.jaredmcc4.gtm.dto.adjunto.AdjuntoDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -13,18 +11,10 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.*;
 
-@SpringBootTest(properties = {
-        "spring.autoconfigure.exclude=" +
-                "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration," +
-                "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration," +
-                "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration," +
-                "org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration"
-})
 @DisplayName("Adjunto Mapper - Unit Tests")
 class AdjuntoMapperTest {
 
-    @Autowired
-    private AdjuntoMapper adjuntoMapper;
+    private final AdjuntoMapper adjuntoMapper = new AdjuntoMapper();
 
     @Test
     @DisplayName("Debería mapear Adjunto a AdjuntoDto")

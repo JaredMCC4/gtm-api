@@ -4,23 +4,13 @@ import io.github.jaredmcc4.gtm.domain.Rol;
 import io.github.jaredmcc4.gtm.dto.rol.RolDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import static org.assertj.core.api.Assertions.*;
 
-@SpringBootTest(properties = {
-        "spring.autoconfigure.exclude=" +
-                "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration," +
-                "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration," +
-                "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration," +
-                "org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration"
-})
 @DisplayName("Rol Mapper - Unit Tests")
 class RolMapperTest {
 
-    @Autowired
-    private RolMapper rolMapper;
+    private final RolMapper rolMapper = new RolMapper();
 
     @Test
     @DisplayName("Debería mapear Rol a RolDto correctamente")

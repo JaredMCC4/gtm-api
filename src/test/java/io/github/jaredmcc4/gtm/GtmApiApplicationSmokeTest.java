@@ -1,5 +1,6 @@
 package io.github.jaredmcc4.gtm;
 
+import io.github.jaredmcc4.gtm.config.MockRepositoriesConfig;
 import io.github.jaredmcc4.gtm.controller.*;
 import io.github.jaredmcc4.gtm.repository.*;
 import io.github.jaredmcc4.gtm.services.*;
@@ -7,18 +8,20 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.TestPropertySource;
 
 import static org.assertj.core.api.Assertions.*;
 
-@SpringBootTest(properties = {
-        "spring.autoconfigure.exclude=" +
-                "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration," +
-                "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration," +
-                "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration," +
-                "org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration"
-})
-@TestPropertySource(locations = "classpath:application.properties")
+@SpringBootTest(
+        classes = {GtmApiApplication.class, MockRepositoriesConfig.class},
+        properties = {
+                "spring.autoconfigure.exclude=" +
+                        "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration," +
+                        "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration," +
+                        "org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration," +
+                        "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration," +
+                        "org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration"
+        }
+)
 @DisplayName("GTM API - Smoke Tests")
 class GtmApiApplicationSmokeTest {
 

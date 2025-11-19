@@ -23,7 +23,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest(classes = SecurityConfigTest.TestApp.class)
 @AutoConfigureMockMvc
-@TestPropertySource(locations = "classpath:application.properties")
 @DisplayName("Security Config - Integration Tests")
 class SecurityConfigTest {
 
