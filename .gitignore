@@ -113,7 +113,6 @@ application.properties
 ############################
 # Base de datos / Dumps
 ############################
-*.sql
 *.sql.gz
 *.dump
 db-dumps/
