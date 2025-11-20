@@ -63,4 +63,22 @@ class TareaMapperTest {
     void deberiaRetornarNull() {
         assertThat(tareaMapper.toDto(null)).isNull();
     }
+
+    @Test
+    @DisplayName("Debe mapear correctamente cuando no hay fecha ni etiquetas")
+    void deberiaMapearSinFechaNiEtiquetas() {
+        Tarea tarea = Tarea.builder()
+                .id(20L)
+                .usuario(Usuario.builder().id(2L).build())
+                .titulo("Sin fecha")
+                .descripcion("Sin etiquetas")
+                .prioridad(Tarea.Prioridad.MEDIA)
+                .estado(Tarea.EstadoTarea.PENDIENTE)
+                .build();
+
+        TareaDto dto = tareaMapper.toDto(tarea);
+
+        assertThat(dto.getFechaVencimiento()).isNull();
+        assertThat(dto.getEtiquetas()).isEmpty();
+    }
 }

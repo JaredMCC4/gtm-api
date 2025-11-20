@@ -8,37 +8,59 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("Usuario - Builder y utilidades")
+@DisplayName("Usuario - Builder y colecciones")
 class UsuarioTest {
 
     @Test
-    @DisplayName("El builder debe copiar defensivamente los roles")
+    @DisplayName("El builder debe copiar el set de roles y no compartir referencia")
     void builderDebeCopiarRoles() {
-        Set<Rol> roles = new HashSet<>();
-        roles.add(Rol.builder().id(1L).nombreRol("USER").build());
+        Rol rol = Rol.builder().id(1L).nombreRol("USER").build();
+        Set<Rol> rolesOriginales = new HashSet<>();
+        rolesOriginales.add(rol);
 
         Usuario usuario = Usuario.builder()
-                .id(1L)
-                .email("user@test.com")
-                .roles(roles)
+                .email("test@example.com")
+                .contrasenaHash("hash")
+                .roles(rolesOriginales)
                 .build();
 
-        roles.add(Rol.builder().id(2L).nombreRol("ADMIN").build());
+        rolesOriginales.clear();
 
-        assertThat(usuario.getRoles()).hasSize(1);
+        assertThat(usuario.getRoles())
+                .hasSize(1)
+                .allMatch(r -> r.getNombreRol().equals("USER"));
     }
 
     @Test
-    @DisplayName("setRoles debe aceptar valores null y crear un set vacío")
-    void setRolesDebeAceptarNull() {
+    @DisplayName("El builder debe asignar un set vacío cuando se envía null")
+    void builderDebeAsignarSetVacioCuandoEsNull() {
         Usuario usuario = Usuario.builder()
-                .id(1L)
-                .email("user@test.com")
+                .email("test@example.com")
+                .contrasenaHash("hash")
+                .roles(null)
                 .build();
 
-        usuario.setRoles(null);
+        assertThat(usuario.getRoles())
+                .isNotNull()
+                .isEmpty();
+    }
 
-        assertThat(usuario.getRoles()).isNotNull();
-        assertThat(usuario.getRoles()).isEmpty();
+    @Test
+    @DisplayName("setRoles debe clonar el conjunto recibido")
+    void setRolesDebeClonarConjunto() {
+        Usuario usuario = Usuario.builder()
+                .email("test@example.com")
+                .contrasenaHash("hash")
+                .build();
+
+        Set<Rol> roles = new HashSet<>();
+        roles.add(Rol.builder().id(2L).nombreRol("ADMIN").build());
+
+        usuario.setRoles(roles);
+        roles.clear();
+
+        assertThat(usuario.getRoles())
+                .hasSize(1)
+                .allMatch(r -> r.getNombreRol().equals("ADMIN"));
     }
 }

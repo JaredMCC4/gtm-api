@@ -1,0 +1,128 @@
+package io.github.jaredmcc4.gtm.util;
+
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.nio.charset.StandardCharsets;
+import java.security.Key;
+import java.util.Base64;
+import java.util.Date;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+@DisplayName("JwtUtil - Cobertura adicional")
+class JwtUtilAdditionalTest {
+
+    private JwtUtil jwtUtil;
+    private final String SECRET = "test-secret-key-for-jwt-minimum-256-bits-required-for-hs256";
+    private final long EXPIRATION = 3600000L;
+
+    @BeforeEach
+    void setUp() {
+        jwtUtil = new JwtUtil();
+        ReflectionTestUtils.setField(jwtUtil, "secret", SECRET);
+        ReflectionTestUtils.setField(jwtUtil, "expiration", EXPIRATION);
+    }
+
+    private String buildToken(Object usuarioIdClaim, Object rolesClaim) {
+        Key key = (Key) ReflectionTestUtils.invokeMethod(jwtUtil, "getSigningKey");
+        var builder = Jwts.builder()
+                .setSubject("helper@test.com")
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION));
+        if (usuarioIdClaim != null) {
+            builder.claim("usuarioId", usuarioIdClaim);
+        }
+        if (rolesClaim != null) {
+            builder.claim("roles", rolesClaim);
+        }
+        return builder.signWith(key, SignatureAlgorithm.HS256).compact();
+    }
+
+    @Nested
+    @DisplayName("decodeSecret()")
+    class DecodeSecretTests {
+
+        @Test
+        @DisplayName("Debe decodificar secretos en Base64 estándar")
+        void deberiaDecodificarBase64() {
+            String base64 = Base64.getEncoder()
+                    .encodeToString("base64-secret-key-para-tests-largos".getBytes(StandardCharsets.UTF_8));
+            ReflectionTestUtils.setField(jwtUtil, "secret", base64);
+
+            String token = jwtUtil.generarToken("base64@test.com", 1L, List.of("USER"));
+
+            assertThat(jwtUtil.validarToken(token, "base64@test.com")).isTrue();
+        }
+
+        @Test
+        @DisplayName("Debe decodificar secretos en Base64 URL safe")
+        void deberiaDecodificarBase64Url() {
+            String base64Url = Base64.getUrlEncoder()
+                    .withoutPadding()
+                    .encodeToString("url-secret-key-for-jwt-largo".getBytes(StandardCharsets.UTF_8));
+            ReflectionTestUtils.setField(jwtUtil, "secret", base64Url);
+
+            String token = jwtUtil.generarToken("url@test.com", 2L, List.of("ADMIN"));
+
+            assertThat(jwtUtil.extraerEmail(token)).isEqualTo("url@test.com");
+        }
+    }
+
+    @Nested
+    @DisplayName("extraerUsuarioId() casos adicionales")
+    class ExtraerUsuarioIdAdicionalTests {
+
+        @Test
+        @DisplayName("Debe convertir claims numéricos genéricos")
+        void deberiaConvertirNumberGenerico() {
+            String token = buildToken(12.0, List.of("USER"));
+
+            assertThat(jwtUtil.extraerUsuarioId(token)).isEqualTo(12L);
+        }
+
+        @Test
+        @DisplayName("Debe fallar cuando el claim no es numérico")
+        void deberiaFallarConStringNoNumerico() {
+            String token = buildToken("abc", List.of("USER"));
+
+            assertThatThrownBy(() -> jwtUtil.extraerUsuarioId(token))
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("extraerRoles() casos edge")
+    class ExtraerRolesEdgeTests {
+
+        @Test
+        @DisplayName("Debe devolver lista vacía cuando los roles no son lista")
+        void deberiaRetornarListaVacia() {
+            String token = buildToken(1L, "ADMIN");
+
+            assertThat(jwtUtil.extraerRoles(token)).isEmpty();
+        }
+
+        @Test
+        @DisplayName("Debe limpiar nulos dentro de la lista de roles")
+        void deberiaLimpiarRolesNulos() {
+            String token = buildToken(1L, List.of("USER", null, "ADMIN"));
+
+            assertThat(jwtUtil.extraerRoles(token))
+                    .containsExactlyInAnyOrder("USER", "ADMIN");
+        }
+    }
+
+    @Test
+    @DisplayName("validarToken debe retornar false para tokens inválidos")
+    void validarTokenDebeRetornarFalse() {
+        assertThat(jwtUtil.validarToken("token.invalido", "test@example.com")).isFalse();
+    }
+}

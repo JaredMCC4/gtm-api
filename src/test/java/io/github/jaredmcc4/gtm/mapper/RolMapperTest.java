@@ -5,34 +5,30 @@ import io.github.jaredmcc4.gtm.dto.rol.RolDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("Rol Mapper - Unit Tests")
+@DisplayName("RolMapper - Unit Tests")
 class RolMapperTest {
 
     private final RolMapper rolMapper = new RolMapper();
 
     @Test
-    @DisplayName("Debería mapear Rol a RolDto correctamente")
-    void deberiaMapeARolDto() {
-
-        Rol rol = Rol.builder()
-                .id(1L)
-                .nombreRol("USER")
+    @DisplayName("Debe convertir DTO a entidad correctamente")
+    void deberiaConvertirDtoEnEntity() {
+        RolDto dto = RolDto.builder()
+                .id(5L)
+                .nombreRol("ADMIN")
                 .build();
 
-        RolDto resultado = rolMapper.toDto(rol);
-        
-        assertThat(resultado).isNotNull();
-        assertThat(resultado.getId()).isEqualTo(1L);
-        assertThat(resultado.getNombreRol()).isEqualTo("USER");
+        Rol resultado = rolMapper.toEntity(dto);
+
+        assertThat(resultado.getId()).isEqualTo(5L);
+        assertThat(resultado.getNombreRol()).isEqualTo("ADMIN");
     }
 
     @Test
-    @DisplayName("Debería retornar null si Rol es null")
-    void deberiaRetornarNullSiRolEsNull() {
-
-        RolDto resultado = rolMapper.toDto(null);
-        assertThat(resultado).isNull();
+    @DisplayName("Debe retornar null al convertir DTO nulo")
+    void deberiaRetornarNullConDtoNulo() {
+        assertThat(rolMapper.toEntity(null)).isNull();
     }
 }

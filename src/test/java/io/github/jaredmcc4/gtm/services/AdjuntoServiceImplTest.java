@@ -72,6 +72,31 @@ class AdjuntoServiceImplTest {
     }
 
     @Nested
+    @DisplayName("subirAdjunto() - Casos adicionales")
+    class SubirAdjuntoCasosAdicionales {
+
+        @Test
+        @DisplayName("Debe generar nombre válido cuando el archivo no tiene extensión")
+        void deberiaGenerarNombreParaArchivoSinExtension() throws IOException {
+            ReflectionTestUtils.setField(adjuntoService, "uploadDir", tempDir.toString());
+            when(tareaService.obtenerTareaPorIdYUsuarioId(1L, 1L)).thenReturn(tarea);
+            MultipartFile sinExtension = new MockMultipartFile(
+                    "file",
+                    "archivo",
+                    "application/pdf",
+                    "contenido".getBytes()
+            );
+            when(adjuntoRepository.save(any(Adjunto.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            Adjunto adjunto = adjuntoService.subirAdjunto(1L, sinExtension, 1L);
+
+            assertThat(adjunto.getPath())
+                    .isNotBlank()
+                    .doesNotEndWith(".");
+        }
+    }
+
+    @Nested
     @DisplayName("subirAdjunto()")
     class SubirAdjuntoTests {
 
@@ -228,6 +253,26 @@ class AdjuntoServiceImplTest {
 
             assertThatThrownBy(() -> adjuntoService.descargarAdjunto(1L, 2L))
                     .isInstanceOf(UnauthorizedException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("descargarAdjunto() - Casos adicionales")
+    class DescargarAdjuntoCasosAdicionales {
+
+        @Test
+        @DisplayName("Debe fallar cuando el archivo físico no existe")
+        void deberiaFallarSiArchivoNoExiste() {
+            Adjunto adjunto = Adjunto.builder()
+                    .id(1L)
+                    .path(tempDir.resolve("no-existe").resolve("archivo.pdf").toString())
+                    .tarea(tarea)
+                    .build();
+
+            when(adjuntoRepository.findById(1L)).thenReturn(Optional.of(adjunto));
+
+            assertThatThrownBy(() -> adjuntoService.descargarAdjunto(1L, 1L))
+                    .isInstanceOf(ResourceNotFoundException.class);
         }
     }
 
