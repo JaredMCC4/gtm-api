@@ -15,8 +15,6 @@ import java.util.Set;
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "tareas", indexes = {
@@ -47,12 +45,10 @@ public class Tarea {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "prioridad", nullable = false, length = 10)
-    @Builder.Default
     private Prioridad prioridad = Prioridad.MEDIA; // Prioridad x default = Media
 
     @Enumerated(EnumType.STRING)
     @Column(name = "estado", nullable = false, length = 15)
-    @Builder.Default
     private EstadoTarea estado = EstadoTarea.PENDIENTE; // Estado x default = Pendiente
 
     @Column(name = "fecha_vencimiento")
@@ -64,22 +60,9 @@ public class Tarea {
             joinColumns = @JoinColumn(name = "tarea_id"),
             inverseJoinColumns = @JoinColumn(name = "etiqueta_id")
     )
-    @Builder.Default
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
     private Set<Etiqueta> etiquetas = new HashSet<>();
-
-    public void setEtiquetas(Set<Etiqueta> etiquetas) {
-        this.etiquetas = etiquetas == null ? new HashSet<>() : new HashSet<>(etiquetas);
-    }
-
-    public static class TareaBuilder {
-        private Set<Etiqueta> etiquetas = new HashSet<>();
-
-        public TareaBuilder etiquetas(Set<Etiqueta> etiquetas) {
-            this.etiquetas = etiquetas == null ? new HashSet<>() : new HashSet<>(etiquetas);
-            return this;
-        }
-    }
-
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -97,5 +80,35 @@ public class Tarea {
         PENDIENTE, COMPLETADA, CANCELADA
     }
 
+    @Builder
+    private Tarea(Long id,
+                  Usuario usuario,
+                  String titulo,
+                  String descripcion,
+                  Prioridad prioridad,
+                  EstadoTarea estado,
+                  LocalDateTime fechaVencimiento,
+                  Set<Etiqueta> etiquetas,
+                  LocalDateTime createdAt,
+                  LocalDateTime updatedAt) {
+        this.id = id;
+        this.usuario = usuario;
+        this.titulo = titulo;
+        this.descripcion = descripcion;
+        this.prioridad = prioridad != null ? prioridad : Prioridad.MEDIA;
+        this.estado = estado != null ? estado : EstadoTarea.PENDIENTE;
+        this.fechaVencimiento = fechaVencimiento;
+        setEtiquetas(etiquetas);
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+    }
+
+    public void setEtiquetas(Set<Etiqueta> etiquetas) {
+        this.etiquetas = etiquetas == null ? new HashSet<>() : new HashSet<>(etiquetas);
+    }
+
+    public Set<Etiqueta> getEtiquetas() {
+        return new HashSet<>(etiquetas);
+    }
 
 }

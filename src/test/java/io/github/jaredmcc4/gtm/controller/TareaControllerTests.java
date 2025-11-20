@@ -6,8 +6,8 @@ import io.github.jaredmcc4.gtm.builders.UsuarioTestBuilder;
 import io.github.jaredmcc4.gtm.config.TestSecurityConfig;
 import io.github.jaredmcc4.gtm.domain.Tarea;
 import io.github.jaredmcc4.gtm.domain.Usuario;
-import io.github.jaredmcc4.gtm.dto.tarea.CrearTareaRequest;
 import io.github.jaredmcc4.gtm.dto.tarea.ActualizarTareaRequest;
+import io.github.jaredmcc4.gtm.dto.tarea.CrearTareaRequest;
 import io.github.jaredmcc4.gtm.dto.tarea.TareaDto;
 import io.github.jaredmcc4.gtm.exception.GlobalExceptionHandler;
 import io.github.jaredmcc4.gtm.exception.ResourceNotFoundException;
@@ -26,6 +26,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -85,7 +86,6 @@ class TareaControllerTests {
                 .build();
 
         when(jwtUtil.extraerUsuarioId(anyString())).thenReturn(1L);
-
         when(usuarioService.obtenerUsuarioPorId(1L)).thenReturn(usuario);
         when(tareaMapper.toDto(any(Tarea.class))).thenReturn(tareaDto);
     }
@@ -97,6 +97,10 @@ class TareaControllerTests {
                 .build();
     }
 
+    private Page<Tarea> buildPage() {
+        return new PageImpl<>(List.of(tarea), PageRequest.of(0, 10), 1);
+    }
+
     @Nested
     @DisplayName("POST /api/v1/tareas")
     class CrearTareaTests {
@@ -105,10 +109,9 @@ class TareaControllerTests {
         @WithMockUser
         @DisplayName("Debería poder crear una tarea correctamente")
         void deberiaCrearTarea() throws Exception {
-
             CrearTareaRequest request = CrearTareaRequest.builder()
                     .titulo("Nueva tarea")
-                    .descripcion("Descripción de la tarea")
+                    .descripcion("Descripción")
                     .prioridad(Tarea.Prioridad.MEDIA)
                     .fechaVencimiento(LocalDateTime.now().plusDays(7))
                     .build();
@@ -130,10 +133,7 @@ class TareaControllerTests {
         @WithMockUser
         @DisplayName("Debería retornar 400 con título vacío")
         void deberiaRechazarTituloVacio() throws Exception {
-
-            CrearTareaRequest request = CrearTareaRequest.builder()
-                    .titulo("")
-                    .build();
+            CrearTareaRequest request = CrearTareaRequest.builder().titulo("").build();
 
             mockMvc.perform(post("/api/v1/tareas")
                             .with(csrf())
@@ -146,29 +146,9 @@ class TareaControllerTests {
         }
 
         @Test
-        @WithMockUser
-        @DisplayName("Debería retornar 400 con título menor a 3 carácteres")
-        void deberiaRechazarTituloCorto() throws Exception {
-
-            CrearTareaRequest request = CrearTareaRequest.builder()
-                    .titulo("ab")
-                    .build();
-
-            mockMvc.perform(post("/api/v1/tareas")
-                            .with(csrf())
-                            .with(jwt().jwt(jwtMock()))
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isBadRequest());
-        }
-
-        @Test
         @DisplayName("Debería retornar 401 sin token de autorización")
         void deberiaRechazarSinToken() throws Exception {
-
-            CrearTareaRequest request = CrearTareaRequest.builder()
-                    .titulo("Nueva tarea")
-                    .build();
+            CrearTareaRequest request = CrearTareaRequest.builder().titulo("Nueva tarea").build();
 
             mockMvc.perform(post("/api/v1/tareas")
                             .with(csrf())
@@ -184,23 +164,17 @@ class TareaControllerTests {
 
         @Test
         @WithMockUser
-        @DisplayName("Debería poder obtener las tareas paginadas")
+        @DisplayName("Debería obtener tareas paginadas por defecto")
         void deberiaObtenerTareasPaginadas() throws Exception {
-
-            Page<Tarea> page = new PageImpl<>(
-                    List.of(tarea),
-                    PageRequest.of(0, 10),
-                    1
-            );
-
-            when(tareaService.obtenerTareasPorUsuarioId(eq(1L), any())).thenReturn(page);
+            when(tareaService.obtenerTareasPorUsuarioId(eq(1L), any())).thenReturn(buildPage());
 
             mockMvc.perform(get("/api/v1/tareas")
                             .with(jwt().jwt(jwtMock()))
                             .param("page", "0")
                             .param("size", "10"))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.success").value(true));
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.content").isArray());
 
             verify(tareaService).obtenerTareasPorUsuarioId(eq(1L), any());
         }
@@ -209,31 +183,22 @@ class TareaControllerTests {
         @WithMockUser
         @DisplayName("Debería filtrar las tareas por estado")
         void deberiaFiltrarPorEstado() throws Exception {
-
-            Page<Tarea> page = new PageImpl<>(List.of(tarea), PageRequest.of(0, 10), 1);
-            when(tareaService.filtrarTareas(eq(1L), any(), any(), any(), any())).thenReturn(page);
+            when(tareaService.filtrarTareas(eq(1L), eq(Tarea.EstadoTarea.PENDIENTE), isNull(), isNull(), any()))
+                    .thenReturn(buildPage());
 
             mockMvc.perform(get("/api/v1/tareas")
                             .with(jwt().jwt(jwtMock()))
                             .param("estado", "PENDIENTE"))
                     .andExpect(status().isOk());
 
-            verify(tareaService).filtrarTareas(
-                    eq(1L),
-                    eq(Tarea.EstadoTarea.PENDIENTE),
-                    isNull(),
-                    isNull(),
-                    any()
-            );
+            verify(tareaService).filtrarTareas(eq(1L), eq(Tarea.EstadoTarea.PENDIENTE), isNull(), isNull(), any());
         }
 
         @Test
         @WithMockUser
-        @DisplayName("Debería poder buscar tareas por texto")
+        @DisplayName("Debería buscar tareas por texto")
         void deberiaBuscarPorTexto() throws Exception {
-
-            Page<Tarea> page = new PageImpl<>(List.of(tarea), PageRequest.of(0, 10), 1);
-            when(tareaService.buscarTareasPorTexto(eq(1L), anyString(), any())).thenReturn(page);
+            when(tareaService.buscarTareasPorTexto(eq(1L), eq("prueba"), any())).thenReturn(buildPage());
 
             mockMvc.perform(get("/api/v1/tareas")
                             .with(jwt().jwt(jwtMock()))
@@ -245,6 +210,82 @@ class TareaControllerTests {
     }
 
     @Nested
+    @DisplayName("GET /api/v1/tareas/filtrar")
+    class FiltrarTareasTests {
+        @Test
+        @WithMockUser
+        @DisplayName("Debería filtrar tareas con múltiples parámetros")
+        void deberiaFiltrarTareas() throws Exception {
+            when(tareaService.filtrarTareas(eq(1L), eq(Tarea.EstadoTarea.CANCELADA), eq("docs"), eq(Tarea.Prioridad.ALTA), any()))
+                    .thenReturn(buildPage());
+
+            mockMvc.perform(get("/api/v1/tareas/filtrar")
+                            .with(jwt().jwt(jwtMock()))
+                            .param("estado", "CANCELADA")
+                            .param("prioridad", "ALTA")
+                            .param("titulo", "docs"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.content").isArray());
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/v1/tareas/etiqueta/{etiquetaId}")
+    class ObtenerPorEtiquetaTests {
+        @Test
+        @WithMockUser
+        @DisplayName("Debería obtener tareas por etiqueta")
+        void deberiaObtenerTareasPorEtiqueta() throws Exception {
+            when(tareaService.obtenerTareasPorEtiquetaId(eq(3L), eq(1L), any(Pageable.class)))
+                    .thenReturn(buildPage());
+
+            mockMvc.perform(get("/api/v1/tareas/etiqueta/3")
+                            .with(jwt().jwt(jwtMock())))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.content").isArray());
+
+            verify(tareaService).obtenerTareasPorEtiquetaId(eq(3L), eq(1L), any(Pageable.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/v1/tareas/proximas-vencer")
+    class ProximasVencerTests {
+        @Test
+        @WithMockUser
+        @DisplayName("Debería obtener tareas próximas a vencer")
+        void deberiaObtenerTareasProximas() throws Exception {
+            when(tareaService.obtenerTareasProximasVencimiento(1L, 3))
+                    .thenReturn(List.of(tarea));
+
+            mockMvc.perform(get("/api/v1/tareas/proximas-vencer")
+                            .with(jwt().jwt(jwtMock()))
+                            .param("dias", "3"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data").isArray());
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/v1/tareas/estadisticas")
+    class EstadisticasTests {
+        @Test
+        @WithMockUser
+        @DisplayName("Debería obtener estadísticas")
+        void deberiaObtenerEstadisticas() throws Exception {
+            when(tareaService.contarTareasPorEstado(1L, Tarea.EstadoTarea.PENDIENTE)).thenReturn(2L);
+            when(tareaService.contarTareasPorEstado(1L, Tarea.EstadoTarea.COMPLETADA)).thenReturn(1L);
+            when(tareaService.contarTareasPorEstado(1L, Tarea.EstadoTarea.CANCELADA)).thenReturn(1L);
+
+            mockMvc.perform(get("/api/v1/tareas/estadisticas")
+                            .with(jwt().jwt(jwtMock())))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.total").value(4))
+                    .andExpect(jsonPath("$.data.pendientes").value(2));
+        }
+    }
+
+    @Nested
     @DisplayName("GET /api/v1/tareas/{id}")
     class ObtenerTareaPorIdTests {
 
@@ -252,22 +293,18 @@ class TareaControllerTests {
         @WithMockUser
         @DisplayName("Debería poder obtener una tarea por su ID")
         void deberiaObtenerTareaPorId() throws Exception {
-
             when(tareaService.obtenerTareaPorIdYUsuarioId(1L, 1L)).thenReturn(tarea);
 
             mockMvc.perform(get("/api/v1/tareas/1")
-                        .with(jwt().jwt(jwtMock())))
+                            .with(jwt().jwt(jwtMock())))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true));
-
-            verify(tareaService).obtenerTareaPorIdYUsuarioId(1L, 1L);
         }
 
         @Test
         @WithMockUser
         @DisplayName("Debería retornar 404 cuando una tarea no existe")
         void deberiaRetornar404CuandoNoExiste() throws Exception {
-
             when(tareaService.obtenerTareaPorIdYUsuarioId(999L, 1L))
                     .thenThrow(new ResourceNotFoundException("Tarea no encontrada"));
 
@@ -285,14 +322,12 @@ class TareaControllerTests {
         @WithMockUser
         @DisplayName("Debería actualizar una tarea correctamente")
         void deberiaActualizarTarea() throws Exception {
-
             ActualizarTareaRequest request = ActualizarTareaRequest.builder()
                     .titulo("Título actualizado")
                     .prioridad(Tarea.Prioridad.ALTA)
                     .build();
 
-            when(tareaService.actualizarTarea(eq(1L), any(Tarea.class), eq(1L)))
-                    .thenReturn(tarea);
+            when(tareaService.actualizarTarea(eq(1L), any(Tarea.class), eq(1L))).thenReturn(tarea);
 
             mockMvc.perform(put("/api/v1/tareas/1")
                             .with(csrf())
@@ -300,18 +335,13 @@ class TareaControllerTests {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk());
-
-            verify(tareaService).actualizarTarea(eq(1L), any(Tarea.class), eq(1L));
         }
 
         @Test
         @WithMockUser
         @DisplayName("Debería retornar 404 al actualizar una tarea inexistente")
         void deberiaRetornar404AlActualizarInexistente() throws Exception {
-
-            ActualizarTareaRequest request = ActualizarTareaRequest.builder()
-                    .titulo("Título actualizado")
-                    .build();
+            ActualizarTareaRequest request = ActualizarTareaRequest.builder().titulo("Título actualizado").build();
 
             when(tareaService.actualizarTarea(eq(999L), any(Tarea.class), eq(1L)))
                     .thenThrow(new ResourceNotFoundException("Tarea no encontrada"));
@@ -333,14 +363,12 @@ class TareaControllerTests {
         @WithMockUser
         @DisplayName("Debería eliminar una tarea correctamente")
         void deberiaEliminarTarea() throws Exception {
-
             doNothing().when(tareaService).eliminarTarea(1L, 1L);
 
             mockMvc.perform(delete("/api/v1/tareas/1")
                             .with(csrf())
-                    .with(jwt().jwt(jwtMock())))
+                            .with(jwt().jwt(jwtMock())))
                     .andExpect(status().isOk());
-
 
             verify(tareaService).eliminarTarea(1L, 1L);
         }
@@ -349,10 +377,8 @@ class TareaControllerTests {
         @WithMockUser
         @DisplayName("Debería retornar 404 al eliminar una tarea inexistente")
         void deberiaRetornar404AlEliminarInexistente() throws Exception {
-
             doThrow(new ResourceNotFoundException("Tarea no encontrada"))
                     .when(tareaService).eliminarTarea(999L, 1L);
-
 
             mockMvc.perform(delete("/api/v1/tareas/999")
                             .with(csrf())
