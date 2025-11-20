@@ -10,6 +10,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
@@ -53,8 +54,9 @@ class JwtUtilAdditionalTest {
         @Test
         @DisplayName("Debe decodificar secretos en Base64 estándar")
         void deberiaDecodificarBase64() {
+            String base64Plain = "base64-secret-key-para-tests-largos-y-seguro-para-256bits";
             String base64 = Base64.getEncoder()
-                    .encodeToString("base64-secret-key-para-tests-largos".getBytes(StandardCharsets.UTF_8));
+                    .encodeToString(base64Plain.getBytes(StandardCharsets.UTF_8));
             ReflectionTestUtils.setField(jwtUtil, "secret", base64);
 
             String token = jwtUtil.generarToken("base64@test.com", 1L, List.of("USER"));
@@ -65,9 +67,10 @@ class JwtUtilAdditionalTest {
         @Test
         @DisplayName("Debe decodificar secretos en Base64 URL safe")
         void deberiaDecodificarBase64Url() {
+            String base64UrlPlain = "url-safe-secret-key-para-pruebas-y-muy-largo-para-256bits";
             String base64Url = Base64.getUrlEncoder()
                     .withoutPadding()
-                    .encodeToString("url-secret-key-for-jwt-largo".getBytes(StandardCharsets.UTF_8));
+                    .encodeToString(base64UrlPlain.getBytes(StandardCharsets.UTF_8));
             ReflectionTestUtils.setField(jwtUtil, "secret", base64Url);
 
             String token = jwtUtil.generarToken("url@test.com", 2L, List.of("ADMIN"));
@@ -113,7 +116,7 @@ class JwtUtilAdditionalTest {
         @Test
         @DisplayName("Debe limpiar nulos dentro de la lista de roles")
         void deberiaLimpiarRolesNulos() {
-            String token = buildToken(1L, List.of("USER", null, "ADMIN"));
+            String token = buildToken(1L, Arrays.asList("USER", null, "ADMIN"));
 
             assertThat(jwtUtil.extraerRoles(token))
                     .containsExactlyInAnyOrder("USER", "ADMIN");
