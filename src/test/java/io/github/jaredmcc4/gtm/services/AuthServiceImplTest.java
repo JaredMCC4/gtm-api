@@ -20,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -189,7 +190,7 @@ public class AuthServiceImplTest {
             when(passwordEncoder.matches(request.getPassword(), usuario.getContrasenaHash())).thenReturn(false);
 
             assertThatThrownBy(() -> authService.autenticarUsuario(request))
-                    .isInstanceOf(IllegalArgumentException.class)
+                    .isInstanceOf(BadCredentialsException.class)
                     .hasMessageContaining("Credenciales inválidas");
 
             verify(jwtUtil, never()).generarToken(anyString(), anyLong(), anyList());
@@ -210,7 +211,7 @@ public class AuthServiceImplTest {
             when(passwordEncoder.matches(request.getPassword(), usuarioInactivo.getContrasenaHash())).thenReturn(true);
 
             assertThatThrownBy(() -> authService.autenticarUsuario(request))
-                    .isInstanceOf(IllegalArgumentException.class)
+                    .isInstanceOf(BadCredentialsException.class)
                     .hasMessageContaining("El usuario no está activo.");
 
             verify(jwtUtil, never()).generarToken(anyString(), anyLong(), anyList());
@@ -225,7 +226,7 @@ public class AuthServiceImplTest {
             when(usuarioRepository.findByEmail(request.getEmail())).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> authService.autenticarUsuario(request))
-                    .isInstanceOf(IllegalArgumentException.class)
+                    .isInstanceOf(BadCredentialsException.class)
                     .hasMessageContaining("Credenciales inválidas.");
         }
     }

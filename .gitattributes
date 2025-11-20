@@ -9,13 +9,13 @@ mvnw text eol=lf
 *.ps1 text eol=crlf
 
 # Source (force LF)
-*.java text eol=lf
-*.xml text eol=lf
-*.yml text eol=lf
-*.yaml text eol=lf
-*.properties text eol=lf
-*.sql text eol=lf
-*.md text diff=markdown
+*.java text eol=lf working-tree-encoding=UTF-8
+*.xml text eol=lf working-tree-encoding=UTF-8
+*.yml text eol=lf working-tree-encoding=UTF-8
+*.yaml text eol=lf working-tree-encoding=UTF-8
+*.properties text eol=lf working-tree-encoding=UTF-8
+*.sql text eol=lf working-tree-encoding=UTF-8
+*.md text diff=markdown working-tree-encoding=UTF-8
 
 # Binary artifacts
 *.jar binary

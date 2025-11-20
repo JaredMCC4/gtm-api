@@ -15,6 +15,7 @@ import io.github.jaredmcc4.gtm.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,7 +52,7 @@ public class AuthServiceImpl implements AuthService{
         log.info("Registrando usuario nuevo con el email: {}", registroRequest.getEmail());
 
         if (usuarioRepository.existsByEmail(registroRequest.getEmail())){
-            throw new IllegalArgumentException("Ya existe un usuario con el email");
+            throw new IllegalArgumentException("Ya existe un usuario con el email proporcionado.");
         }
 
         Rol rol = rolRepository.findByNombreRol("USER").orElseThrow(() -> new ResourceNotFoundException("El rol de usuario no existe."));
@@ -76,14 +77,14 @@ public class AuthServiceImpl implements AuthService{
         log.info("Autenticando usuario con el email: {}", loginRequest.getEmail());
 
         Usuario usuario = usuarioRepository.findByEmail(loginRequest.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("Credenciales inválidas."));
+                .orElseThrow(() -> new BadCredentialsException("Credenciales inválidas."));
 
         if (!passwordEncoder.matches(loginRequest.getPassword(), usuario.getContrasenaHash())){
-            throw new IllegalArgumentException("Credenciales inválidas.");
+            throw new BadCredentialsException("Credenciales inválidas.");
         }
 
         if (!usuario.isActivo()){
-            throw new IllegalArgumentException("El usuario no está activo.");
+            throw new BadCredentialsException("El usuario no está activo.");
         }
 
         List<String> roles = usuario.getRoles().stream().map(Rol::getNombreRol).collect(Collectors.toList());

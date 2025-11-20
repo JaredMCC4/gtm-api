@@ -8,5 +8,5 @@ def generate_password_hash(password):
 if __name__ == "__main__":
     password = input("Ingrese la contraseña a encriptar: ")
     hashed = generate_password_hash(password)
-    print("BCrypt Hasheado: ")
+    print("BCrypt hasheado:")
     print(hashed)

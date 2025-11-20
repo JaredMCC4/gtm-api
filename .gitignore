@@ -102,11 +102,14 @@ test-output/
 .env
 .env.*
 !.env.example
+!.env.test.example
 .secrets/
 secret/
 application-*.yml
 application-*.yaml
 application-*.properties
+!src/main/resources/application-example.properties
+!src/test/resources/application-example.properties
 !application.properties
 application.properties
 
@@ -115,6 +118,7 @@ application.properties
 ############################
 *.sql.gz
 *.dump
+src/main/resources/db/migration/local/
 db-dumps/
 
 ############################

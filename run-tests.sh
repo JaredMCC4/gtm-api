@@ -1,4 +1,4 @@
-#!/bin/bash
+﻿#!/bin/bash
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -9,65 +9,60 @@ COVERAGE_FILE="target/jacoco-merged.exec"
 HTML_REPORT="target/site/jacoco/index.html"
 XML_REPORT="target/site/jacoco/jacoco.xml"
 
-echo "=================================="
-echo "GTM API - Ejecutando tests"
-echo "=================================="
+print_section() {
+    echo "=================================="
+    echo "$1"
+    echo "=================================="
+}
 
-echo ""
-echo "0. Limpiando y ejecutando pruebas (unit + integration) con cobertura..."
+print_section "GTM API - Ejecutando tests"
+echo "0. Limpiando y ejecutando pruebas (unitarias + integración) con cobertura..."
 "$MVNW" --batch-mode clean verify -P integration-tests
 
-echo ""
-echo "=================================="
-echo "Verificando generación de reportes..."
-echo "=================================="
+print_section "Verificando generación de reportes"
 
-# Verificar archivo de cobertura
 if [[ -f "$COVERAGE_FILE" ]]; then
     SIZE=$(wc -c < "$COVERAGE_FILE")
     if (( SIZE > 100 )); then
-        echo "✓ Cobertura consolidada disponible (${SIZE} bytes) en $COVERAGE_FILE"
+        echo "[OK] Cobertura consolidada disponible (${SIZE} bytes) en $COVERAGE_FILE"
     else
-        echo "⚠ ADVERTENCIA: $COVERAGE_FILE es demasiado pequeño (${SIZE} bytes)"
+        echo "[WARN] $COVERAGE_FILE es demasiado pequeño (${SIZE} bytes)"
     fi
 else
-    echo "✗ ERROR: $COVERAGE_FILE no se generó"
+    echo "[ERROR] $COVERAGE_FILE no se generó"
 fi
 
 if [[ -f "$HTML_REPORT" ]]; then
-    echo "✓ Reporte HTML generado: $HTML_REPORT"
+    echo "[OK] Reporte HTML generado: $HTML_REPORT"
 else
-    echo "⚠ Reporte HTML NO encontrado en: $HTML_REPORT"
+    echo "[WARN] Reporte HTML NO encontrado en: $HTML_REPORT"
     FOUND_REPORT=$(find target -name "index.html" -path "*/jacoco/*" 2>/dev/null | head -n 1)
     if [[ -n "$FOUND_REPORT" ]]; then
-        echo "✓ Reporte encontrado en: $FOUND_REPORT"
+        echo "[INFO] Reporte encontrado en: $FOUND_REPORT"
         HTML_REPORT="$FOUND_REPORT"
     else
-        echo "✗ No se encontró ningún reporte HTML de Jacoco"
+        echo "[ERROR] No se encontró ningún reporte HTML de Jacoco"
     fi
 fi
 
 if [[ -f "$XML_REPORT" ]]; then
-    echo "✓ Reporte XML generado: $XML_REPORT"
+    echo "[OK] Reporte XML generado: $XML_REPORT"
 else
-    echo "⚠ Reporte XML NO encontrado en: $XML_REPORT"
+    echo "[WARN] Reporte XML NO encontrado en: $XML_REPORT"
 fi
 
-echo ""
-echo "=================================="
-echo "Tests completados"
+print_section "Tests completados"
 echo "Reporte HTML: $HTML_REPORT"
 echo "Reporte XML:  $XML_REPORT"
-echo "=================================="
 
 open_report() {
     local report_path="$1"
-    
+
     if [[ ! -f "$report_path" ]]; then
-        echo "✗ No se puede abrir: archivo no existe ($report_path)"
+        echo "[ERROR] No se puede abrir: archivo no existe ($report_path)"
         return 1
     fi
-    
+
     echo "Abriendo reporte en navegador..."
     local uname_out
     uname_out="$(uname -s 2>/dev/null || echo unknown)"
@@ -99,10 +94,7 @@ open_report() {
 if [[ -f "$HTML_REPORT" ]]; then
     open_report "$HTML_REPORT"
 else
-    echo ""
-    echo "=================================="
-    echo "⚠ No se pudo abrir el reporte automáticamente"
+    print_section "No se pudo abrir el reporte automáticamente"
     echo "Ejecuta manualmente: open $HTML_REPORT"
     echo "O busca en: target/site/jacoco/index.html"
-    echo "=================================="
 fi
