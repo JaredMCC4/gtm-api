@@ -17,6 +17,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -105,5 +106,22 @@ class TareaServiceImplAdditionalTest {
 
         assertThat(resultado.getTitulo()).isEqualTo(tarea.getTitulo());
         assertThat(resultado.getEstado()).isEqualTo(tarea.getEstado());
+    }
+
+    @Test
+    @DisplayName("actualizarTarea debe aplicar nueva descripción y fecha de vencimiento")
+    void deberiaActualizarDescripcionYFecha() {
+        Tarea actualizacion = Tarea.builder()
+                .descripcion("Nueva descripción")
+                .fechaVencimiento(LocalDateTime.now().plusDays(3))
+                .build();
+
+        when(tareaRepository.findByIdAndUsuarioId(50L, 1L)).thenReturn(Optional.of(tarea));
+        when(tareaRepository.save(any(Tarea.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Tarea resultado = tareaService.actualizarTarea(50L, actualizacion, 1L);
+
+        assertThat(resultado.getDescripcion()).isEqualTo("Nueva descripción");
+        assertThat(resultado.getFechaVencimiento()).isEqualTo(actualizacion.getFechaVencimiento());
     }
 }

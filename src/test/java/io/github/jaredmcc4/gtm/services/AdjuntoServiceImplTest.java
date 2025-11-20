@@ -257,6 +257,51 @@ class AdjuntoServiceImplTest {
     }
 
     @Nested
+    @DisplayName("obtenerAdjuntoPorId()")
+    class ObtenerAdjuntoPorIdTests {
+
+        @Test
+        @DisplayName("Debe retornar el adjunto cuando pertenece al usuario")
+        void deberiaRetornarAdjuntoPropio() {
+            Adjunto adjunto = Adjunto.builder()
+                    .id(7L)
+                    .tarea(tarea)
+                    .path(tempDir.resolve("path").toString())
+                    .build();
+
+            when(adjuntoRepository.findById(7L)).thenReturn(Optional.of(adjunto));
+
+            Adjunto resultado = adjuntoService.obtenerAdjuntoPorId(7L, 1L);
+
+            assertThat(resultado).isSameAs(adjunto);
+        }
+
+        @Test
+        @DisplayName("Debe lanzar excepción cuando el adjunto no existe")
+        void deberiaLanzarExcepcionCuandoNoExiste() {
+            when(adjuntoRepository.findById(99L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> adjuntoService.obtenerAdjuntoPorId(99L, 1L))
+                    .isInstanceOf(ResourceNotFoundException.class);
+        }
+
+        @Test
+        @DisplayName("Debe rechazar adjunto de otro usuario")
+        void deberiaRechazarAdjuntoAjeno() {
+            Usuario otroUsuario = Usuario.builder().id(2L).build();
+            Adjunto adjunto = Adjunto.builder()
+                    .id(7L)
+                    .tarea(Tarea.builder().id(1L).usuario(otroUsuario).build())
+                    .build();
+
+            when(adjuntoRepository.findById(7L)).thenReturn(Optional.of(adjunto));
+
+            assertThatThrownBy(() -> adjuntoService.obtenerAdjuntoPorId(7L, 1L))
+                    .isInstanceOf(UnauthorizedException.class);
+        }
+    }
+
+    @Nested
     @DisplayName("descargarAdjunto() - Casos adicionales")
     class DescargarAdjuntoCasosAdicionales {
 

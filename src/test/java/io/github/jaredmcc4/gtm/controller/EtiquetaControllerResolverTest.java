@@ -18,6 +18,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.oauth2.jwt.Jwt;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
@@ -87,5 +89,17 @@ class EtiquetaControllerResolverTest {
     void deberiaLanzarUnauthorizedSinCredenciales() {
         assertThatThrownBy(() -> etiquetaController.obtenerEtiquetas(null, null))
                 .isInstanceOf(UnauthorizedException.class);
+    }
+
+    @Test
+    @DisplayName("Debe resolver usuario usando encabezado Authorization")
+    void deberiaResolverConHeader() {
+        when(jwtUtil.extraerUsuarioId("token-header")).thenReturn(3L);
+        when(etiquetaService.obtenerEtiquetasPorUsuarioId(3L)).thenReturn(List.of());
+
+        etiquetaController.obtenerEtiquetas(null, "Bearer token-header");
+
+        verify(jwtUtil).extraerUsuarioId("token-header");
+        verify(etiquetaService).obtenerEtiquetasPorUsuarioId(3L);
     }
 }

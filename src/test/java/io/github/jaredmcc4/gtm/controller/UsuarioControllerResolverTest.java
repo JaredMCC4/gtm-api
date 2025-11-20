@@ -74,4 +74,21 @@ class UsuarioControllerResolverTest {
         assertThatThrownBy(() -> usuarioController.actualizarPerfil(null, null, request))
                 .isInstanceOf(UnauthorizedException.class);
     }
+
+    @Test
+    @DisplayName("Debe resolver usuario usando el encabezado Authorization")
+    void deberiaResolverUsuarioDesdeHeader() {
+        when(jwtUtil.extraerUsuarioId("token-header")).thenReturn(7L);
+        when(usuarioService.obtenerUsuarioPorId(7L)).thenReturn(Usuario.builder().id(7L).email("header@test.com").contrasenaHash("hash").build());
+        when(usuarioMapper.toDto(any(Usuario.class))).thenReturn(UsuarioDto.builder().id(7L).email("header@test.com").build());
+
+        ApiResponse<UsuarioDto> respuesta = usuarioController
+                .obtenerPerfil(null, "Bearer token-header")
+                .getBody();
+
+        assertThat(respuesta).isNotNull();
+        assertThat(respuesta.getData().getId()).isEqualTo(7L);
+        verify(jwtUtil).extraerUsuarioId("token-header");
+        verify(usuarioService).obtenerUsuarioPorId(7L);
+    }
 }

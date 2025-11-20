@@ -77,6 +77,25 @@ class JwtUtilAdditionalTest {
 
             assertThat(jwtUtil.extraerEmail(token)).isEqualTo("url@test.com");
         }
+
+        @Test
+        @DisplayName("Debe usar texto plano cuando el secreto no es Base64")
+        void deberiaUsarTextoPlano() {
+            String plainSecret = "texto-plano-seguro-para-tests-12345678901234567890";
+            ReflectionTestUtils.setField(jwtUtil, "secret", plainSecret);
+
+            String token = jwtUtil.generarToken("plain@test.com", 3L, List.of("USER"));
+
+            assertThat(jwtUtil.extraerUsuarioId(token)).isEqualTo(3L);
+        }
+
+        @Test
+        @DisplayName("Debe rechazar secretos vacíos o nulos")
+        void deberiaRechazarSecretosVacios() {
+            assertThatThrownBy(() ->
+                    ReflectionTestUtils.invokeMethod(jwtUtil, "decodeSecret", "")
+            ).isInstanceOf(IllegalArgumentException.class);
+        }
     }
 
     @Nested

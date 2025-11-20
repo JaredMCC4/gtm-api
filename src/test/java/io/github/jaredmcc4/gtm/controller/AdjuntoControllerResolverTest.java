@@ -82,4 +82,16 @@ class AdjuntoControllerResolverTest {
         assertThatThrownBy(() -> adjuntoController.eliminarAdjunto(1L, null, null))
                 .isInstanceOf(UnauthorizedException.class);
     }
+
+    @Test
+    @DisplayName("Debe resolver usuario desde el Authorization header")
+    void deberiaResolverConHeader() {
+        when(jwtUtil.extraerUsuarioId("token-header")).thenReturn(4L);
+        when(adjuntoService.mostrarAdjuntos(2L, 4L)).thenReturn(List.of());
+
+        adjuntoController.obtenerAdjuntosPorTarea(2L, null, "Bearer token-header");
+
+        verify(jwtUtil).extraerUsuarioId("token-header");
+        verify(adjuntoService).mostrarAdjuntos(2L, 4L);
+    }
 }

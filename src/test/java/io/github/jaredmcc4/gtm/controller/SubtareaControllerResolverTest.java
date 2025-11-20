@@ -82,4 +82,16 @@ class SubtareaControllerResolverTest {
         assertThatThrownBy(() -> subtareaController.eliminarSubtarea(null, null, 1L))
                 .isInstanceOf(UnauthorizedException.class);
     }
+
+    @Test
+    @DisplayName("Debe resolver usuario usando Authorization header")
+    void deberiaResolverConHeader() {
+        when(jwtUtil.extraerUsuarioId("token-header")).thenReturn(8L);
+        when(subtareaService.mostrarSubtareas(2L, 8L)).thenReturn(List.of());
+
+        subtareaController.obtenerSubtareasPorTarea(null, "Bearer token-header", 2L);
+
+        verify(jwtUtil).extraerUsuarioId("token-header");
+        verify(subtareaService).mostrarSubtareas(2L, 8L);
+    }
 }

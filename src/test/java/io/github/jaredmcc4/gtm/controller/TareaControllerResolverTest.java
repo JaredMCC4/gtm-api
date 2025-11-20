@@ -5,6 +5,7 @@ import io.github.jaredmcc4.gtm.domain.Usuario;
 import io.github.jaredmcc4.gtm.dto.response.ApiResponse;
 import io.github.jaredmcc4.gtm.dto.response.PageResponse;
 import io.github.jaredmcc4.gtm.dto.tarea.TareaDto;
+import io.github.jaredmcc4.gtm.exception.UnauthorizedException;
 import io.github.jaredmcc4.gtm.mapper.TareaMapper;
 import io.github.jaredmcc4.gtm.services.TareaService;
 import io.github.jaredmcc4.gtm.services.UsuarioService;
@@ -17,6 +18,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -27,10 +30,12 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 @DisplayName("TareaController - Resolución de usuario")
 class TareaControllerResolverTest {
 
@@ -104,5 +109,14 @@ class TareaControllerResolverTest {
 
         assertThat(respuesta).isNotNull();
         verify(tareaService).buscarTareasPorTexto(eq(3L), eq("bug"), any());
+    }
+
+    @Test
+    @DisplayName("Debe lanzar Unauthorized cuando no hay contexto ni Jwt")
+    void deberiaLanzarUnauthorizedSinContexto() {
+        SecurityContextHolder.clearContext();
+
+        assertThatThrownBy(() -> tareaController.obtenerTareas(null, 0, 10, "createdAt", "DESC", null, null))
+                .isInstanceOf(UnauthorizedException.class);
     }
 }
