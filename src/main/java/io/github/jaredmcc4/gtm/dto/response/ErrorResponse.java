@@ -13,6 +13,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @Schema(description = "Esquema estandar de error para las respuestas no exitosas.")
+/**
+ * Estructura para devolver errores con mensaje, detalle y metadatos.
+ */
 public class ErrorResponse {
 
     @Schema(description = "Marca de exito, siempre false en errores", example = "false")

@@ -6,6 +6,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Payload para refrescar o revocar JWT usando el refresh token.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,3 +19,4 @@ public class RefreshTokenRequest {
     @NotBlank(message = "El refresh token no puede estar vacio.")
     private String refreshToken;
 }
+

@@ -6,6 +6,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Respuesta generada al autenticar o refrescar tokens JWT.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -26,3 +29,4 @@ public class JwtResponse {
     @Schema(description = "Refresh token emitido", example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
     private String refreshToken;
 }
+

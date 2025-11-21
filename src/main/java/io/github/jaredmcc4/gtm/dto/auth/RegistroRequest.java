@@ -8,6 +8,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Payload para registrar un nuevo usuario en el sistema.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -31,3 +34,4 @@ public class RegistroRequest {
     @Schema(description = "Zona horaria preferida", example = "America/Costa_Rica")
     private String zonaHoraria = "America/Costa_Rica";
 }
+

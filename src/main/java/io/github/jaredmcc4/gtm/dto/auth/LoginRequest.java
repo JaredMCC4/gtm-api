@@ -8,6 +8,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Payload para solicitar autenticacion mediante email y contraseña.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -24,3 +27,4 @@ public class LoginRequest {
     @NotBlank(message = "La contrasena no puede estar vacia.")
     private String password;
 }
+
