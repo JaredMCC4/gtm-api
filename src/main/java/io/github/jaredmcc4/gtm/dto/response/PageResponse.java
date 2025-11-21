@@ -8,6 +8,9 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
+/**
+ * Representa una pagina de resultados de la API, incluyendo metadatos de paginacion.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -27,7 +30,13 @@ public class PageResponse<T> {
     @Schema(description = "Indica si es la última página.", example = "false")
     private Boolean last;
 
-    public Boolean isLast(){
+    /**
+     * Calcula si la página actual es la última de acuerdo al total de páginas.
+     *
+     * @return true si es la última página
+     */
+    public Boolean isLast() {
         return pageNumber >= totalPages - 1;
     }
 }
+

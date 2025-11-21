@@ -5,8 +5,14 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Valida archivos adjuntos subidos por los usuarios antes de su almacenamiento.
+ */
 public class FileValidator {
 
+    /**
+     * Tipos MIME permitidos para los adjuntos que se gestionan en el sistema.
+     */
     private static final List<String> ALLOWED_FILE_TYPES = Arrays.asList(
             "application/pdf",
             "application/vnd.openxmlformats-officedocument.presentationml.presentation",
@@ -49,15 +55,22 @@ public class FileValidator {
 
     private static final long MAX_SIZE = 10 * 1024 * 1024; // 10MB
 
+    /**
+     * Verifica que el archivo no este vacio, no sobrepase 10MB y tenga un tipo MIME permitido.
+     *
+     * @param file archivo cargado por el usuario
+     * @throws IllegalArgumentException si el archivo es invalido segun las reglas definidas
+     */
     public static void validate(MultipartFile file) {
         if (file.isEmpty()){
-            throw new IllegalArgumentException("El archivo está vacío.");
+            throw new IllegalArgumentException("El archivo esta vacio.");
         }
         if (file.getSize() > MAX_SIZE){
-            throw new IllegalArgumentException("El archivo excede el tamaño máximo permitido de 10MB.");
+            throw new IllegalArgumentException("El archivo excede el tamano maximo permitido de 10MB.");
         }
         if (!ALLOWED_FILE_TYPES.contains(file.getContentType())){
-            throw new IllegalArgumentException("El tipo de archivo no está permitido.");
+            throw new IllegalArgumentException("El tipo de archivo no esta permitido.");
         }
     }
 }
+

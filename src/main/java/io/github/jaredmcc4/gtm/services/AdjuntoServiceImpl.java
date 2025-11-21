@@ -24,11 +24,15 @@ import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Implementacion de {@link AdjuntoService} que gestiona almacenamiento local
+ * de archivos y conserva la referencia en base de datos.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class AdjuntoServiceImpl implements AdjuntoService{
+public class AdjuntoServiceImpl implements AdjuntoService {
 
     private final AdjuntoRepository adjuntoRepository;
     private final TareaService tareaService;
@@ -36,6 +40,9 @@ public class AdjuntoServiceImpl implements AdjuntoService{
     @Value("${app.upload.dir}")
     private String uploadDir;
 
+    /**
+     * Guarda el archivo fisico, genera nombre unico y persiste el adjunto vinculado a la tarea.
+     */
     @Override
     @Transactional
     public Adjunto subirAdjunto(Long tareaId, MultipartFile file, Long usuarioId) {
@@ -69,76 +76,89 @@ public class AdjuntoServiceImpl implements AdjuntoService{
         }
     }
 
+    /**
+     * Lista los adjuntos de una tarea, validando propiedad del usuario.
+     */
     @Override
     public List<Adjunto> mostrarAdjuntos(Long tareaId, Long usuarioId) {
-        log.debug("Mostrando adjuntos para tarea ID: {}" +
-                "Usuario ID: {}", tareaId, usuarioId);
+        log.debug("Mostrando adjuntos para tarea ID: {} Usuario ID: {}", tareaId, usuarioId);
         tareaService.obtenerTareaPorIdYUsuarioId(tareaId, usuarioId);
         return adjuntoRepository.findByTareaId(tareaId);
     }
 
+    /**
+     * Elimina el archivo fisico y la referencia en base de datos.
+     */
     @Override
     @Transactional
     public void eliminarAdjunto(Long adjuntoId, Long usuarioId) {
-        log.info("Eliminando adjunto ID: {}" +
-                "Usuario ID: {}", adjuntoId, usuarioId);
-        Adjunto adjunto =  obtenerAdjuntoPorId(adjuntoId, usuarioId);
+        log.info("Eliminando adjunto ID: {} Usuario ID: {}", adjuntoId, usuarioId);
+        Adjunto adjunto = obtenerAdjuntoPorId(adjuntoId, usuarioId);
 
         try {
             Path ruta = Paths.get(adjunto.getPath());
             Files.deleteIfExists(ruta);
             adjuntoRepository.delete(adjunto);
         } catch (IOException e) {
-            log.error("Error al eliminar el archivo físico: {}", e.getMessage());
+            log.error("Error al eliminar el archivo fisico: {}", e.getMessage());
             throw new RuntimeException("Error al eliminar el archivo: " + e.getMessage());
         }
     }
 
+    /**
+     * Devuelve el recurso binario del adjunto, validando que pertenezca al usuario.
+     */
     @Override
     public Resource descargarAdjunto(Long adjuntoId, Long usuarioId) {
-        log.debug("Descargando adjunto con ID: {}" +
-                "Usuario ID: {}", adjuntoId, usuarioId);
+        log.debug("Descargando adjunto con ID: {} Usuario ID: {}", adjuntoId, usuarioId);
 
         Adjunto adjunto = obtenerAdjuntoPorId(adjuntoId, usuarioId);
 
         try {
             Path ruta = Paths.get(adjunto.getPath());
             Resource resource = new UrlResource(ruta.toUri());
-            if(resource.exists() && resource.isReadable()){
+            if (resource.exists() && resource.isReadable()) {
                 return resource;
             } else {
-                throw new ResourceNotFoundException("El archivo no existe o no puede ser leído.");
+                throw new ResourceNotFoundException("El archivo no existe o no puede ser leido.");
             }
-        } catch (MalformedURLException e){
+        } catch (MalformedURLException e) {
             log.error("Error al formar la URL del archivo: {}", e.getMessage());
             throw new RuntimeException("Error al descargar el archivo: " + e.getMessage());
-            }
-        }
-
-        @Override
-        public Adjunto obtenerAdjuntoPorId(Long adjuntoId, Long usuarioId){
-            log.debug("Obteniendo adjunto con ID: {}" +
-                    "Usuario ID: {}", adjuntoId, usuarioId);
-
-            Adjunto adjunto = adjuntoRepository.findById(adjuntoId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Adjunto no encontrado."));
-
-            if (!adjunto.getTarea().getUsuario().getId().equals(usuarioId)) {
-                throw new UnauthorizedException("No tiene permiso para acceder al recurso.");
-            }
-
-            return adjunto;
-        }
-
-        private String generarNombreUnico(String nombreOriginal){
-            String aux = "";
-            int ultimo = nombreOriginal.lastIndexOf('.');
-
-            if (ultimo > 0) {
-                aux = nombreOriginal.substring(ultimo);
-            }
-            return UUID.randomUUID() + aux;
         }
     }
 
+    /**
+     * Obtiene un adjunto y valida la propiedad del usuario.
+     */
+    @Override
+    public Adjunto obtenerAdjuntoPorId(Long adjuntoId, Long usuarioId) {
+        log.debug("Obteniendo adjunto con ID: {} Usuario ID: {}", adjuntoId, usuarioId);
+
+        Adjunto adjunto = adjuntoRepository.findById(adjuntoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Adjunto no encontrado."));
+
+        if (!adjunto.getTarea().getUsuario().getId().equals(usuarioId)) {
+            throw new UnauthorizedException("No tiene permiso para acceder al recurso.");
+        }
+
+        return adjunto;
+    }
+
+    /**
+     * Crea un nombre unico conservando la extension del archivo original.
+     *
+     * @param nombreOriginal nombre recibido
+     * @return nuevo nombre con UUID
+     */
+    private String generarNombreUnico(String nombreOriginal) {
+        String extension = "";
+        int ultimo = nombreOriginal.lastIndexOf('.');
+
+        if (ultimo > 0) {
+            extension = nombreOriginal.substring(ultimo);
+        }
+        return UUID.randomUUID() + extension;
+    }
+}
 

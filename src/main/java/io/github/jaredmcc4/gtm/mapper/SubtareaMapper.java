@@ -6,6 +6,12 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class SubtareaMapper {
+    /**
+     * Convierte una subtarea de dominio a su DTO.
+     *
+     * @param subtarea entidad origen (puede ser null)
+     * @return DTO resultante o null
+     */
     public SubtareaDto toDto(Subtarea subtarea) {
         if (subtarea == null){
             return null;
@@ -18,6 +24,12 @@ public class SubtareaMapper {
                 .build();
     }
 
+    /**
+     * Convierte un DTO de subtarea a entidad de dominio.
+     *
+     * @param subtareaDto dto origen (puede ser null)
+     * @return entidad resultante o null
+     */
     public Subtarea toEntity(SubtareaDto subtareaDto){
         if (subtareaDto == null) {
             return null;

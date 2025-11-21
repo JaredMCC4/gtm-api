@@ -11,6 +11,16 @@ import java.util.stream.Collectors;
 @Component
 public class PageUtil {
 
+    /**
+     * Convierte una pagina de entidades JPA a una respuesta paginada de DTOs.
+     * Mantiene metadatos de paginacion y evita retornar nulidad en colecciones.
+     *
+     * @param page pagina de entidades origen
+     * @param mapper funcion que transforma cada elemento de la pagina
+     * @param <T> tipo de entidad origen
+     * @param <D> tipo de DTO destino
+     * @return {@link PageResponse} con contenido mapeado y datos de paginacion
+     */
     public static <T,D>PageResponse<D> toPageResponse(Page<T> page, Function<T,D> mapper) {
         List<D> content = page.getContent().stream()
                 .map(mapper)

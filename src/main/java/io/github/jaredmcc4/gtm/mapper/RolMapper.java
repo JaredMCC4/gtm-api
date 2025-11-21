@@ -6,6 +6,12 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class RolMapper {
+    /**
+     * Convierte una entidad de rol a DTO.
+     *
+     * @param rol entidad origen (puede ser null)
+     * @return DTO resultante o null
+     */
     public RolDto toDto(Rol rol) {
         if (rol == null){
             return null;
@@ -17,6 +23,12 @@ public class RolMapper {
                 .build();
     }
 
+    /**
+     * Convierte un DTO de rol a entidad.
+     *
+     * @param rolDto dto origen (puede ser null)
+     * @return entidad resultante o null
+     */
     public Rol toEntity(RolDto rolDto) {
         if (rolDto == null) {
             return null;

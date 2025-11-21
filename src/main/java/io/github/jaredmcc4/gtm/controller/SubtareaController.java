@@ -13,7 +13,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
-
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,6 +28,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Controlador REST para la gestion de subtareas asociadas a tareas del usuario autenticado.
+ */
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/subtareas")
@@ -41,6 +43,14 @@ public class SubtareaController {
     private final SubtareaMapper subtareaMapper;
     private final JwtUtil jwtUtil;
 
+    /**
+     * Resuelve el ID de usuario autenticado desde el JWT recibido o el header Authorization.
+     *
+     * @param jwt token JWT inyectado por Spring Security (puede ser null)
+     * @param authorizationHeader encabezado Authorization con formato Bearer (opcional)
+     * @return identificador interno del usuario
+     * @throws UnauthorizedException si no se puede determinar el usuario
+     */
     private Long resolveUsuarioId(Jwt jwt, String authorizationHeader) {
         if (jwt != null) {
             return JwtExtractorUtil.extractUsuarioId(jwt);
@@ -52,6 +62,14 @@ public class SubtareaController {
         throw new UnauthorizedException("No se pudo determinar el usuario autenticado");
     }
 
+    /**
+     * Obtiene todas las subtareas de una tarea especifica para el usuario autenticado.
+     *
+     * @param jwt JWT actual
+     * @param authorizationHeader header Authorization con Bearer token (opcional)
+     * @param tareaId identificador de la tarea
+     * @return lista de subtareas asociadas
+     */
     @Operation(
             summary = "Obtener subtareas de una tarea",
             description = "Muestra todas las subtareas de una tarea especifica."
@@ -81,6 +99,15 @@ public class SubtareaController {
         return ResponseEntity.ok(ApiResponse.success("Subtareas obtenidas exitosamente", subtareasDto));
     }
 
+    /**
+     * Crea una nueva subtarea bajo una tarea existente.
+     *
+     * @param jwt JWT actual
+     * @param authorizationHeader header Authorization con Bearer token (opcional)
+     * @param tareaId identificador de la tarea padre
+     * @param subtareaDto datos de la subtarea a crear
+     * @return subtarea creada
+     */
     @Operation(
             summary = "Crear subtarea",
             description = "Agrega una nueva subtarea a una tarea existente."
@@ -114,6 +141,15 @@ public class SubtareaController {
                 .body(ApiResponse.success("Subtarea creada exitosamente", subtareaDtoCreada));
     }
 
+    /**
+     * Actualiza titulo o estado de una subtarea del usuario autenticado.
+     *
+     * @param jwt JWT actual
+     * @param authorizationHeader header Authorization con Bearer token (opcional)
+     * @param id identificador de la subtarea
+     * @param subtareaDto datos a actualizar
+     * @return subtarea actualizada
+     */
     @Operation(
             summary = "Actualizar subtarea",
             description = "Modifica el titulo o estado de completado de una subtarea."
@@ -145,6 +181,14 @@ public class SubtareaController {
         return ResponseEntity.ok(ApiResponse.success("Subtarea actualizada exitosamente", subtareaDtoActualizada));
     }
 
+    /**
+     * Elimina una subtarea del usuario autenticado.
+     *
+     * @param jwt JWT actual
+     * @param authorizationHeader header Authorization con Bearer token (opcional)
+     * @param id identificador de la subtarea
+     * @return respuesta sin datos si la eliminacion fue exitosa
+     */
     @Operation(
             summary = "Eliminar subtarea",
             description = "Elimina una subtarea."
@@ -171,3 +215,4 @@ public class SubtareaController {
         return ResponseEntity.ok(ApiResponse.success("Subtarea eliminada exitosamente", null));
     }
 }
+

@@ -1,5 +1,11 @@
 package io.github.jaredmcc4.gtm.controller;
 
+import io.github.jaredmcc4.gtm.domain.Tarea;
+import io.github.jaredmcc4.gtm.dto.response.ApiResponse;
+import io.github.jaredmcc4.gtm.dto.response.ErrorResponse;
+import io.github.jaredmcc4.gtm.dto.response.PageResponse;
+import io.github.jaredmcc4.gtm.dto.tarea.CrearTareaRequest;
+import io.github.jaredmcc4.gtm.dto.tarea.ActualizarTareaRequest;
 import io.github.jaredmcc4.gtm.dto.tarea.EstadisticasDto;
 import io.github.jaredmcc4.gtm.dto.tarea.TareaDto;
 import io.github.jaredmcc4.gtm.exception.UnauthorizedException;
@@ -31,12 +37,13 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Controlador REST para la gestion completa de tareas del usuario autenticado.
+ * Expone operaciones de listado, filtrado, estadisticas, creacion, actualizacion y eliminacion.
+ */
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/tareas")
@@ -50,6 +57,14 @@ public class TareaController {
     private final TareaMapper tareaMapper;
     private final JwtUtil jwtUtil;
 
+    /**
+     * Obtiene el ID del usuario autenticado a partir del JWT actual.
+     * Lee el token del principal o del contexto de seguridad y valida su presencia.
+     *
+     * @param jwt token extraido por {@link AuthenticationPrincipal} (puede ser null)
+     * @return identificador interno del usuario autenticado
+     * @throws UnauthorizedException si no hay JWT valido en el contexto
+     */
     private Long resolverUsuarioId(Jwt jwt) {
         if (jwt != null) {
             return jwtUtil.extraerUsuarioId(jwt.getTokenValue());
@@ -62,6 +77,18 @@ public class TareaController {
         throw new UnauthorizedException("Token JWT requerido.");
     }
 
+    /**
+     * Devuelve una pagina de tareas del usuario autenticado con soporte de orden y filtros basicos.
+     *
+     * @param jwt JWT actual
+     * @param page numero de pagina (0-based)
+     * @param size tamano de pagina
+     * @param sortBy campo para ordenar
+     * @param direction direccion de orden (ASC/DESC)
+     * @param estado filtro opcional por estado
+     * @param search texto a buscar en titulo o descripcion
+     * @return pagina de tareas del usuario
+     */
     @Operation(
             summary = "Obtener todas las tareas",
             description = "Lista paginada de tareas del usuario, ordenadas por fecha de creacion (DESC por defecto)."
@@ -101,6 +128,15 @@ public class TareaController {
         return ResponseEntity.ok(ApiResponse.success("Tareas obtenidas exitosamente", pageResponse));
     }
 
+    /**
+     * Busca tareas por texto en titulo y descripcion para el usuario autenticado.
+     *
+     * @param jwt JWT actual
+     * @param texto texto a buscar
+     * @param page numero de pagina (0-based)
+     * @param size tamano de pagina
+     * @return pagina con tareas que coinciden con el texto
+     */
     @Operation(
             summary = "Buscar tareas por texto",
             description = "Busqueda en titulo y descripcion de las tareas del usuario."
@@ -128,6 +164,17 @@ public class TareaController {
         return ResponseEntity.ok(ApiResponse.success("Busqueda completada", pageResponse));
     }
 
+    /**
+     * Filtra tareas por estado, prioridad y titulo parcial.
+     *
+     * @param jwt JWT actual
+     * @param estado estado opcional
+     * @param prioridad prioridad opcional
+     * @param titulo fragmento del titulo opcional
+     * @param page numero de pagina (0-based)
+     * @param size tamano de pagina
+     * @return pagina de tareas filtradas
+     */
     @Operation(
             summary = "Filtrar tareas",
             description = "Filtra por estado, prioridad y/o titulo."
@@ -158,6 +205,15 @@ public class TareaController {
         return ResponseEntity.ok(ApiResponse.success("Filtrado completado", pageResponse));
     }
 
+    /**
+     * Obtiene tareas asociadas a una etiqueta especifica para el usuario autenticado.
+     *
+     * @param jwt JWT actual
+     * @param etiquetaId identificador de la etiqueta
+     * @param page numero de pagina (0-based)
+     * @param size tamano de pagina
+     * @return pagina de tareas vinculadas a la etiqueta
+     */
     @Operation(
             summary = "Obtener tareas por etiqueta",
             description = "Lista de tareas asociadas a una etiqueta especifica."
@@ -187,6 +243,13 @@ public class TareaController {
         return ResponseEntity.ok(ApiResponse.success("Tareas obtenidas por etiqueta", pageResponse));
     }
 
+    /**
+     * Lista tareas pendientes que vencen dentro de los proximos N dias.
+     *
+     * @param jwt JWT actual
+     * @param dias ventana de dias a futuro
+     * @return lista de tareas proximas a vencer
+     */
     @Operation(
             summary = "Obtener tareas proximas a vencer",
             description = "Lista de tareas PENDIENTE que vencen en los proximos N dias."
@@ -211,6 +274,12 @@ public class TareaController {
         return ResponseEntity.ok(ApiResponse.success("Tareas proximas a vencer obtenidas", tareasDto));
     }
 
+    /**
+     * Devuelve estadisticas de conteo de tareas por estado para el usuario autenticado.
+     *
+     * @param jwt JWT actual
+     * @return totales de pendientes, completadas, canceladas y total
+     */
     @Operation(
             summary = "Obtener estadisticas de tareas",
             description = "Conteo de tareas por estado para el usuario."
@@ -241,6 +310,13 @@ public class TareaController {
         return ResponseEntity.ok(ApiResponse.success("Estadisticas obtenidas", estadisticas));
     }
 
+    /**
+     * Obtiene el detalle de una tarea especifica perteneciente al usuario autenticado.
+     *
+     * @param jwt JWT actual
+     * @param id identificador de la tarea
+     * @return tarea en formato DTO
+     */
     @Operation(
             summary = "Obtener una tarea por ID",
             description = "Detalle completo de una tarea."
@@ -267,6 +343,13 @@ public class TareaController {
         return ResponseEntity.ok(ApiResponse.success("Tarea obtenida exitosamente", tareaDto));
     }
 
+    /**
+     * Crea una nueva tarea (estado PENDIENTE) para el usuario autenticado.
+     *
+     * @param jwt JWT actual
+     * @param request datos de la tarea a crear
+     * @return tarea creada
+     */
     @Operation(
             summary = "Crear nueva tarea",
             description = "Crea una tarea con estado PENDIENTE por defecto."
@@ -303,6 +386,14 @@ public class TareaController {
                 .body(ApiResponse.success("Tarea creada exitosamente", tareaDto));
     }
 
+    /**
+     * Actualiza una tarea existente del usuario autenticado.
+     *
+     * @param jwt JWT actual
+     * @param id identificador de la tarea
+     * @param request datos de actualizacion
+     * @return tarea actualizada
+     */
     @Operation(
             summary = "Actualizar tarea",
             description = "Modifica los campos de una tarea existente."
@@ -340,6 +431,13 @@ public class TareaController {
         return ResponseEntity.ok(ApiResponse.success("Tarea actualizada exitosamente", tareaDto));
     }
 
+    /**
+     * Elimina una tarea y sus recursos asociados para el usuario autenticado.
+     *
+     * @param jwt JWT actual
+     * @param id identificador de la tarea
+     * @return respuesta sin datos cuando la eliminacion es exitosa
+     */
     @Operation(
             summary = "Eliminar tarea",
             description = "Elimina una tarea y todas sus subtareas y adjuntos asociados."
@@ -364,3 +462,4 @@ public class TareaController {
         return ResponseEntity.ok(ApiResponse.success("Tarea eliminada exitosamente", null));
     }
 }
+

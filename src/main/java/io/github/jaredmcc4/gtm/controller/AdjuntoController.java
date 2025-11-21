@@ -14,7 +14,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
-
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,6 +32,10 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Controlador REST para gestionar archivos adjuntos asociados a tareas.
+ * Permite subir, listar, descargar y eliminar adjuntos del usuario autenticado.
+ */
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/adjuntos")
@@ -45,6 +48,14 @@ public class AdjuntoController {
     private final AdjuntoMapper adjuntoMapper;
     private final JwtUtil jwtUtil;
 
+    /**
+     * Obtiene el ID de usuario autenticado a partir del JWT del principal o del header Authorization.
+     *
+     * @param jwt token JWT inyectado por Spring (puede ser null)
+     * @param authorizationHeader header Authorization Bearer opcional
+     * @return identificador interno del usuario
+     * @throws UnauthorizedException si no se puede determinar el usuario
+     */
     private Long resolveUsuarioId(Jwt jwt, String authorizationHeader) {
         if (jwt != null) {
             return JwtExtractorUtil.extractUsuarioId(jwt);
@@ -56,6 +67,15 @@ public class AdjuntoController {
         throw new UnauthorizedException("No se pudo determinar el usuario autenticado");
     }
 
+    /**
+     * Sube un archivo y lo asocia a una tarea del usuario autenticado.
+     *
+     * @param tareaId identificador de la tarea
+     * @param file archivo recibido via multipart
+     * @param jwt JWT actual
+     * @param authorizationHeader header Authorization Bearer opcional
+     * @return adjunto creado en formato DTO
+     */
     @Operation(summary = "Subir un archivo adjunto a una tarea")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Archivo subido",
@@ -86,6 +106,14 @@ public class AdjuntoController {
                 .body(ApiResponse.success("Archivo subido exitosamente", dto));
     }
 
+    /**
+     * Lista los adjuntos de una tarea del usuario autenticado.
+     *
+     * @param tareaId identificador de la tarea
+     * @param jwt JWT actual
+     * @param authorizationHeader header Authorization Bearer opcional
+     * @return lista de adjuntos en formato DTO
+     */
     @Operation(summary = "Obtener adjuntos de una tarea", description = "Muestra todos los archivos adjuntos de una tarea.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Adjuntos obtenidos",
@@ -112,6 +140,14 @@ public class AdjuntoController {
         return ResponseEntity.ok(ApiResponse.success("Adjuntos recuperados exitosamente", dtos));
     }
 
+    /**
+     * Descarga un adjunto propiedad del usuario.
+     *
+     * @param adjuntoId identificador del adjunto
+     * @param jwt JWT actual
+     * @param authorizationHeader header Authorization Bearer opcional
+     * @return recurso binario del adjunto con cabecera de descarga
+     */
     @Operation(summary = "Descargar archivo adjunto", description = "Descarga el archivo seleccionado.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Archivo descargado"),
@@ -139,6 +175,14 @@ public class AdjuntoController {
                 .body(resource);
     }
 
+    /**
+     * Elimina un adjunto del usuario autenticado.
+     *
+     * @param adjuntoId identificador del adjunto
+     * @param jwt JWT actual
+     * @param authorizationHeader header Authorization Bearer opcional
+     * @return respuesta sin cuerpo tras eliminar
+     */
     @Operation(summary = "Eliminar archivo adjunto", description = "Elimina un archivo del sistema y de la base de datos.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Adjunto eliminado",
@@ -161,3 +205,4 @@ public class AdjuntoController {
         return ResponseEntity.ok(ApiResponse.success("Adjunto eliminado exitosamente", null));
     }
 }
+

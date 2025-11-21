@@ -64,9 +64,6 @@ gtm-api
 |-- .env (local, no versionado)
 |-- .env.test (local, no versionado)
 |-- README.md
-|-- historias.md
-|-- requerimientos.md
-|-- tecnologias.md
 |-- HELP.md
 |-- src
 |   |-- main
@@ -197,8 +194,6 @@ java -jar target/gtm-api-0.0.1-SNAPSHOT.jar
 ## Documentación de la API y documentos funcionales
 - **Swagger/OpenAPI:** disponible en `http://localhost:28/swagger` y el JSON en `http://localhost:28/v3/api-docs`. `OpenApiConfig` define título, versión, descripción, contacto (`Jared Ch, jaredjosue888@gmail.com`), servidor (`http://localhost:28`) y licencia (MIT).
 - **Documentos adicionales:**
-  - [historias.md](historias.md): catálogo de historias de usuario.
-  - [requerimientos.md](requerimientos.md): requerimientos funcionales y no funcionales.
   - [tecnologias.md](tecnologias.md): decisiones tecnológicas.
   - [HELP.md](HELP.md): enlaces de referencia.
   - [src/scripts/password_encrypt_gen.py](src/scripts/password_encrypt_gen.py): script CLI para generar contraseñas BCrypt.

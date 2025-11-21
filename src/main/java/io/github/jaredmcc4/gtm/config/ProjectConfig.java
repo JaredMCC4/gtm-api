@@ -13,6 +13,11 @@ import java.util.Locale;
 @Configuration
 public class ProjectConfig {
 
+    /**
+     * Fuente de mensajes para i18n basada en los bundles {@code messages*}.
+     *
+     * @return {@link MessageSource} con codificacion UTF-8 y sin fallback al locale del sistema
+     */
     @Bean
     public MessageSource messageSource() {
         ResourceBundleMessageSource messageSource = new ResourceBundleMessageSource();
@@ -22,6 +27,11 @@ public class ProjectConfig {
         return messageSource;
     }
 
+    /**
+     * Fija el locale por defecto a {@code es-CR} para toda la aplicacion web.
+     *
+     * @return {@link LocaleResolver} con localidad fija
+     */
     @Bean
     public LocaleResolver localeResolver() {
         FixedLocaleResolver resolver = new FixedLocaleResolver();

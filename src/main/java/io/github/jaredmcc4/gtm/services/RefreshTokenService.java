@@ -5,13 +5,38 @@ import io.github.jaredmcc4.gtm.domain.Usuario;
 
 import java.util.Optional;
 
+/**
+ * Contrato para gestionar tokens de refresco persistidos.
+ */
 public interface RefreshTokenService {
 
-    public RefreshToken crearRefreshToken(Usuario usuario, long validezTiempo);
+    /**
+     * Crea y persiste un refresh token para el usuario indicado.
+     *
+     * @param usuario usuario propietario
+     * @param validezTiempo tiempo de vigencia en milisegundos
+     * @return token generado
+     */
+    RefreshToken crearRefreshToken(Usuario usuario, long validezTiempo);
 
-    public Optional<RefreshToken> validarRefreshToken(String token);
+    /**
+     * Valida formato, vigencia y estado de un refresh token.
+     *
+     * @param token cadena del refresh token
+     * @return token opcional si es valido y no revocado
+     */
+    Optional<RefreshToken> validarRefreshToken(String token);
 
-    public void revocarRefreshToken(String token);
-    public void limpiarRefreshTokensExpirados();
+    /**
+     * Revoca un refresh token especifico.
+     *
+     * @param token cadena del refresh token
+     */
+    void revocarRefreshToken(String token);
+
+    /**
+     * Elimina o marca como revocados los refresh tokens ya expirados.
+     */
+    void limpiarRefreshTokensExpirados();
 
 }

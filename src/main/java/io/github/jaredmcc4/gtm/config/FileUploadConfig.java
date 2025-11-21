@@ -11,6 +11,12 @@ public class FileUploadConfig implements WebMvcConfigurer {
     @Value("${app.upload.dir}")
     private String uploadDir;
 
+    /**
+     * Expone el directorio de cargas locales bajo el prefijo HTTP {@code /uploads/**},
+     * permitiendo servir archivos estaticos subidos por los usuarios.
+     *
+     * @param registry registro de handlers de recursos estaticos
+     */
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry){
         registry.addResourceHandler("/uploads/**")

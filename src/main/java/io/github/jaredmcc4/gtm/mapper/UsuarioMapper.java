@@ -10,6 +10,12 @@ import java.util.stream.Collectors;
 @Component
 public class UsuarioMapper {
 
+    /**
+     * Convierte una entidad Usuario en su representacion DTO incluyendo roles y estado.
+     *
+     * @param usuario entidad origen (puede ser null)
+     * @return DTO con datos visibles o null si la entrada es null
+     */
     public UsuarioDto toDto(Usuario usuario){
         if (usuario == null){
             return null;

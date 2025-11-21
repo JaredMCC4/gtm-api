@@ -15,7 +15,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
-
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,6 +26,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * Controlador REST para operaciones sobre el perfil del usuario autenticado.
+ */
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/usuarios")
@@ -39,6 +41,14 @@ public class UsuarioController {
     private final UsuarioMapper usuarioMapper;
     private final JwtUtil jwtUtil;
 
+    /**
+     * Determina el ID de usuario autenticado leyendo el JWT del principal o del header Authorization.
+     *
+     * @param jwt token JWT inyectado (puede ser null)
+     * @param authorizationHeader header Authorization Bearer opcional
+     * @return identificador interno del usuario
+     * @throws UnauthorizedException si no se puede resolver el usuario
+     */
     private Long resolverUsuarioId(Jwt jwt, String authorizationHeader) {
         if (jwt != null) {
             return JwtExtractorUtil.extractUsuarioId(jwt);
@@ -50,6 +60,13 @@ public class UsuarioController {
         throw new UnauthorizedException("No se pudo determinar el usuario autenticado");
     }
 
+    /**
+     * Devuelve el perfil del usuario autenticado.
+     *
+     * @param jwt JWT actual
+     * @param authorizationHeader header Authorization Bearer opcional
+     * @return DTO con datos visibles del usuario
+     */
     @Operation(summary = "Obtener perfil del usuario autenticado", description = "Informacion completa del usuario.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Perfil obtenido",
@@ -70,6 +87,14 @@ public class UsuarioController {
         return ResponseEntity.ok(ApiResponse.success("Perfil obtenido exitosamente", usuarioDto));
     }
 
+    /**
+     * Actualiza nombre y zona horaria del usuario autenticado.
+     *
+     * @param jwt JWT actual
+     * @param authorizationHeader header Authorization Bearer opcional
+     * @param request datos de actualizacion
+     * @return perfil actualizado
+     */
     @Operation(summary = "Actualizar perfil de usuario", description = "Modificar nombre y zona horaria.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Perfil actualizado",
@@ -99,6 +124,14 @@ public class UsuarioController {
         return ResponseEntity.ok(ApiResponse.success("Perfil actualizado exitosamente", usuarioDto));
     }
 
+    /**
+     * Cambia la contrasena del usuario autenticado validando la contrasena actual.
+     *
+     * @param jwt JWT actual
+     * @param authorizationHeader header Authorization Bearer opcional
+     * @param request request con contrasena actual y nueva
+     * @return respuesta sin cuerpo cuando se actualiza correctamente
+     */
     @Operation(summary = "Cambiar contrasena", description = "Modifica la contrasena del usuario autenticado.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Contrasena cambiada",
@@ -121,3 +154,4 @@ public class UsuarioController {
         return ResponseEntity.ok(ApiResponse.success("Contrasena cambiada exitosamente", null));
     }
 }
+

@@ -12,6 +12,12 @@ import java.util.stream.Collectors;
 public class TareaMapper {
     private final EtiquetaMapper etiquetaMapper;
 
+    /**
+     * Convierte una entidad {@link Tarea} en su DTO con etiquetas asociadas.
+     *
+     * @param tarea entidad origen (puede ser null)
+     * @return DTO resultante o null si entrada es null
+     */
     public TareaDto toDto(Tarea tarea){
         if (tarea == null){
             return null;

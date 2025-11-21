@@ -4,9 +4,21 @@ import io.github.jaredmcc4.gtm.exception.UnauthorizedException;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
 
+/**
+ * Utilidades para extraer datos basicos de un JWT ya validado por el resource server.
+ * Se usa en controladores y servicios para recuperar el contexto de usuario autenticado.
+ */
 @Component
 public class JwtExtractorUtil {
 
+    /**
+     * Extrae el ID de usuario desde el claim {@code usuarioId} de un JWT validado.
+     * Convierte valores numericos o cadenas numericas a {@link Long} y valida su presencia.
+     *
+     * @param jwt token JWT ya validado por el resource server
+     * @return identificador interno del usuario autenticado
+     * @throws UnauthorizedException si el token es nulo, no contiene el claim o el formato no es numerico
+     */
     public static Long extractUsuarioId(Jwt jwt) {
         if (jwt == null) {
             throw new UnauthorizedException("Token JWT no proporcionado");
@@ -28,13 +40,20 @@ public class JwtExtractorUtil {
             } else if (usuarioIdClaim instanceof Number) {
                 return ((Number) usuarioIdClaim).longValue();
             } else {
-                throw new UnauthorizedException("Formato de ID de usuario inválido en el token");
+                throw new UnauthorizedException("Formato de ID de usuario invalido en el token");
             }
         } catch (NumberFormatException e) {
-            throw new UnauthorizedException("El ID de usuario en el token no es válido");
+            throw new UnauthorizedException("El ID de usuario en el token no es valido");
         }
     }
 
+    /**
+     * Obtiene el correo electronico desde el subject del JWT.
+     *
+     * @param jwt token JWT ya validado por el resource server
+     * @return email del usuario autenticado
+     * @throws UnauthorizedException si el token es nulo o no incluye subject
+     */
     public static String extractEmail(Jwt jwt) {
         if (jwt == null) {
             throw new UnauthorizedException("Token JWT no proporcionado");
@@ -48,3 +67,4 @@ public class JwtExtractorUtil {
         return email;
     }
 }
+

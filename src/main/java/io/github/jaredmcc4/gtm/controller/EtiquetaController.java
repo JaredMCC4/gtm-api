@@ -14,7 +14,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
-
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,6 +29,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Controlador REST para gestionar etiquetas personalizadas del usuario autenticado.
+ */
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/etiquetas")
@@ -43,6 +45,14 @@ public class EtiquetaController {
     private final UsuarioService usuarioService;
     private final JwtUtil jwtUtil;
 
+    /**
+     * Resuelve el ID de usuario autenticado a partir del JWT del principal o del header Authorization.
+     *
+     * @param jwt token JWT inyectado por Spring (puede ser null)
+     * @param authorizationHeader encabezado Authorization Bearer opcional
+     * @return identificador interno del usuario
+     * @throws UnauthorizedException si no se puede determinar el usuario
+     */
     private Long resolveUsuarioId(Jwt jwt, String authorizationHeader) {
         if (jwt != null) {
             return JwtExtractorUtil.extractUsuarioId(jwt);
@@ -54,6 +64,13 @@ public class EtiquetaController {
         throw new UnauthorizedException("No se pudo determinar el usuario autenticado");
     }
 
+    /**
+     * Lista todas las etiquetas del usuario autenticado.
+     *
+     * @param jwt JWT actual
+     * @param authorizationHeader header Authorization Bearer opcional
+     * @return etiquetas del usuario
+     */
     @Operation(summary = "Obtener todas las etiquetas del usuario", description = "Lista completa de etiquetas personalizadas.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Etiquetas obtenidas",
@@ -76,6 +93,14 @@ public class EtiquetaController {
         return ResponseEntity.ok(ApiResponse.success("Etiquetas obtenidas exitosamente", etiquetasDto));
     }
 
+    /**
+     * Obtiene el detalle de una etiqueta del usuario autenticado.
+     *
+     * @param jwt JWT actual
+     * @param authorizationHeader header Authorization Bearer opcional
+     * @param id identificador de la etiqueta
+     * @return etiqueta encontrada
+     */
     @Operation(summary = "Obtener etiqueta por ID", description = "Detalle de una etiqueta especifica.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Etiqueta encontrada",
@@ -100,6 +125,14 @@ public class EtiquetaController {
         return ResponseEntity.ok(ApiResponse.success("Etiqueta obtenida exitosamente", etiquetaDto));
     }
 
+    /**
+     * Crea una nueva etiqueta para el usuario autenticado.
+     *
+     * @param jwt JWT actual
+     * @param authorizationHeader header Authorization Bearer opcional
+     * @param etiquetaDto datos de la etiqueta (nombre y color)
+     * @return etiqueta creada
+     */
     @Operation(summary = "Crear nueva etiqueta", description = "Crea una etiqueta con nombre y color hexadecimal unicos.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Etiqueta creada",
@@ -128,6 +161,15 @@ public class EtiquetaController {
                 .body(ApiResponse.success("Etiqueta creada exitosamente", etiquetaDtoCreada));
     }
 
+    /**
+     * Actualiza nombre y color de una etiqueta existente del usuario autenticado.
+     *
+     * @param jwt JWT actual
+     * @param authorizationHeader header Authorization Bearer opcional
+     * @param id identificador de la etiqueta
+     * @param etiquetaDto datos actualizados
+     * @return etiqueta actualizada
+     */
     @Operation(summary = "Actualizar etiqueta", description = "Modifica el nombre y color de una etiqueta.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Etiqueta actualizada",
@@ -156,6 +198,14 @@ public class EtiquetaController {
         return ResponseEntity.ok(ApiResponse.success("Etiqueta actualizada exitosamente", etiquetaDtoActualizada));
     }
 
+    /**
+     * Elimina una etiqueta del usuario y la desvincula de sus tareas.
+     *
+     * @param jwt JWT actual
+     * @param authorizationHeader header Authorization Bearer opcional
+     * @param id identificador de la etiqueta
+     * @return respuesta sin cuerpo al eliminar
+     */
     @Operation(summary = "Eliminar etiqueta", description = "Elimina una etiqueta y la desvincula de todas las tareas.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Etiqueta eliminada",
@@ -178,3 +228,4 @@ public class EtiquetaController {
         return ResponseEntity.ok(ApiResponse.success("Etiqueta eliminada exitosamente", null));
     }
 }
+

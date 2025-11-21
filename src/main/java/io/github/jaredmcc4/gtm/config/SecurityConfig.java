@@ -30,12 +30,26 @@ import java.util.stream.Collectors;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    /**
+     * Secreto HMAC usado para firmar y validar los JWT generados por el backend.
+     * Debe tener al menos 256 bits (32 caracteres) para usar HS256 de forma segura.
+     */
     @Value("${jwt.secret}")
     private String jwtSecret;
 
+    /**
+     * Lista de origenes permitidos para CORS, separada por comas.
+     */
     @Value("${app.cors.allowed-origins}")
     private String allowedOrigins;
 
+    /**
+     * Construye el decodificador JWT con el secreto configurado. Valida que el
+     * secreto cumpla el tamano minimo requerido por HS256.
+     *
+     * @return instancia de {@link JwtDecoder} basada en Nimbus
+     * @throws IllegalArgumentException si el secreto tiene menos de 32 bytes
+     */
     @Bean
     public JwtDecoder jwtDecoder() {
         byte[] keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
@@ -47,6 +61,20 @@ public class SecurityConfig {
         return NimbusJwtDecoder.withSecretKey(key).build();
     }
 
+    /**
+     * Define la cadena principal de filtros de Spring Security:
+     * <ul>
+     *     <li>Habilita CORS y deshabilita CSRF (API stateless).</li>
+     *     <li>Configura sesiones sin estado.</li>
+     *     <li>Declara endpoints publicos y restringidos por rol.</li>
+     *     <li>Activa el modo Resource Server con JWT.</li>
+     * </ul>
+     *
+     * @param http configuracion HTTP mutable proporcionada por Spring Security
+     * @param jwtAuthenticationConverter convertidor de roles desde el claim {@code roles}
+     * @return filtro de seguridad completamente configurado
+     * @throws Exception si ocurre un error al construir la cadena
+     */
     @Bean
     public SecurityFilterChain sfc(HttpSecurity http, JwtAuthenticationConverter jwtAuthenticationConverter) throws Exception {
         http
@@ -78,6 +106,11 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /**
+     * Configura CORS permitiendo los origenes listados, metodos comunes y cabeceras genericas.
+     *
+     * @return {@link CorsConfigurationSource} con reglas aplicables a /api/**
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration corsConfig = new CorsConfiguration();
@@ -92,6 +125,11 @@ public class SecurityConfig {
         return source;
     }
 
+    /**
+     * Convierte el claim {@code roles} del JWT en autoridades Spring con prefijo {@code ROLE_}.
+     *
+     * @return convertidor de autenticacion JWT
+     */
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
@@ -103,11 +141,21 @@ public class SecurityConfig {
         return jwtAuthenticationConverter;
     }
 
+    /**
+     * Proveedor de contrasenas basado en BCrypt con factor de costo 12.
+     *
+     * @return codificador de contrasenas
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(12);
     }
 
+    /**
+     * Descompone la lista de origenes permitidos en valores individuales sin espacios.
+     *
+     * @return lista inmutable de origenes permitidos
+     */
     private List<String> parseAllowedOrigins() {
         return Arrays.stream(allowedOrigins.split(","))
                 .map(String::trim)

@@ -31,6 +31,12 @@ public class AuthController {
     private final AuthService authService;
     private final UsuarioMapper usuarioMapper;
 
+    /**
+     * Registra un nuevo usuario final y devuelve sus datos visibles.
+     *
+     * @param request datos de registro validados (email, password, nombre, zona horaria)
+     * @return respuesta con el usuario creado en formato DTO
+     */
     @Operation(summary = "Registrar nuevo usuario", description = "Crea una cuenta nueva.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Usuario registrado",
@@ -47,6 +53,12 @@ public class AuthController {
                 .body(ApiResponse.success("Usuario registrado exitosamente", usuarioDto));
     }
 
+    /**
+     * Autentica al usuario y entrega JWT de acceso y refresh token.
+     *
+     * @param request credenciales de acceso (email y password)
+     * @return tokens emitidos y sus expiraciones
+     */
     @Operation(summary = "Iniciar sesion", description = "Autentica al usuario y devuelve JWT + Refresh Token.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Autenticacion exitosa",
@@ -61,6 +73,12 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Autenticacion exitosa", jwtResponse));
     }
 
+    /**
+     * Genera un nuevo par de tokens a partir de un refresh token valido.
+     *
+     * @param request request con el refresh token actual
+     * @return nuevo JWT de acceso y refresh token renovado
+     */
     @Operation(summary = "Refrescar token JWT", description = "Genera un nuevo JWT usando el Refresh Token valido.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Token refrescado",
@@ -75,6 +93,12 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Token refrescado exitosamente", jwtResponse));
     }
 
+    /**
+     * Revoca el refresh token proporcionado y termina la sesion del usuario.
+     *
+     * @param request request con el refresh token a revocar
+     * @return respuesta sin cuerpo indicando exito
+     */
     @Operation(summary = "Cerrar sesion", description = "Revoca el refresh token del usuario.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Sesion cerrada",
@@ -89,6 +113,12 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Sesion cerrada exitosamente", null));
     }
 
+    /**
+     * Valida la integridad y vigencia de un JWT de acceso.
+     *
+     * @param token JWT a validar
+     * @return respuesta sin cuerpo si el token es valido
+     */
     @Operation(summary = "Validar token JWT", description = "Verifica si el token JWT proporcionado es valido.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Token valido",

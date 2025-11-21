@@ -39,6 +39,12 @@ public class OpenApiConfig {
 
     public static final String SECURITY_SCHEME = "bearerAuth";
 
+    /**
+     * Ajusta el modelo OpenAPI agregando el esquema de seguridad bearer y dejando
+     * consistente el documento generado por springdoc.
+     *
+     * @return instancia de {@link OpenAPI} con configuracion de seguridad aplicada
+     */
     @Bean
     public OpenAPI customOpenAPI() {
         return new OpenAPI()

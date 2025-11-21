@@ -7,6 +7,12 @@ import org.springframework.stereotype.Component;
 @Component
 public class AdjuntoMapper {
 
+    /**
+     * Convierte un adjunto de dominio a DTO exponiendo metadatos del archivo.
+     *
+     * @param adjunto entidad origen (puede ser null)
+     * @return DTO resultante o null
+     */
     public AdjuntoDto toDto(Adjunto adjunto) {
         if (adjunto == null){
             return null;

@@ -4,11 +4,31 @@ import io.github.jaredmcc4.gtm.domain.Rol;
 
 import java.util.List;
 
+/**
+ * Contrato para administrar roles de aplicacion y asignarlos a usuarios.
+ */
 public interface RolService {
 
-    public Rol crearRol(Rol rol);
+    /**
+     * Crea un rol en el sistema.
+     *
+     * @param rol entidad de rol con nombre unico
+     * @return rol creado
+     */
+    Rol crearRol(Rol rol);
 
-    public List<Rol> mostrarRoles();
+    /**
+     * Lista todos los roles disponibles.
+     *
+     * @return roles disponibles
+     */
+    List<Rol> mostrarRoles();
 
-    public void asignarRol(Long usuarioId, String nombreRol);
+    /**
+     * Asigna un rol existente a un usuario.
+     *
+     * @param usuarioId identificador del usuario
+     * @param nombreRol nombre del rol a asignar
+     */
+    void asignarRol(Long usuarioId, String nombreRol);
 }
