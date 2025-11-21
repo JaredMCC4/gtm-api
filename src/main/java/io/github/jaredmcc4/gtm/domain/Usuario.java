@@ -12,6 +12,9 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Entidad que representa a un usuario final con sus roles y metadatos de acceso.
+ */
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -61,6 +64,11 @@ public class Usuario {
     @Builder.Default
     private Set<Rol> roles = new HashSet<>();
 
+    /**
+     * Reemplaza el set de roles asegurando que nunca sea null.
+     *
+     * @param roles coleccion de roles a asignar
+     */
     public void setRoles(Set<Rol> roles) {
         this.roles = roles == null ? new HashSet<>() : new HashSet<>(roles);
     }

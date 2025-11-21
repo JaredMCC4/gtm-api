@@ -20,7 +20,7 @@ public class SubtareaMapper {
         return SubtareaDto.builder()
                 .id(subtarea.getId())
                 .titulo(subtarea.getTitulo())
-                .completada(subtarea.getCompletada())
+                .completada(Boolean.TRUE.equals(subtarea.getCompletada()))
                 .build();
     }
 
@@ -38,7 +38,7 @@ public class SubtareaMapper {
         return Subtarea.builder()
                 .id(subtareaDto.getId())
                 .titulo(subtareaDto.getTitulo())
-                .completada(subtareaDto.getCompletada())
+                .completada(subtareaDto.getCompletada() != null ? subtareaDto.getCompletada() : false)
                 .build();
     }
 

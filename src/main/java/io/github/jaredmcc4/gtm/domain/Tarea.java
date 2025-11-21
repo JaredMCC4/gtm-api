@@ -12,6 +12,10 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Entidad que modela una tarea de un usuario, incluyendo priorizacion,
+ * estado, fecha de vencimiento y etiquetas asociadas.
+ */
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -103,10 +107,20 @@ public class Tarea {
         this.updatedAt = updatedAt;
     }
 
+    /**
+     * Reemplaza las etiquetas asegurando que la coleccion nunca sea null.
+     *
+     * @param etiquetas conjunto de etiquetas a relacionar
+     */
     public void setEtiquetas(Set<Etiqueta> etiquetas) {
         this.etiquetas = etiquetas == null ? new HashSet<>() : new HashSet<>(etiquetas);
     }
 
+    /**
+     * Devuelve una copia defensiva de las etiquetas vinculadas.
+     *
+     * @return conjunto de etiquetas de la tarea
+     */
     public Set<Etiqueta> getEtiquetas() {
         return new HashSet<>(etiquetas);
     }

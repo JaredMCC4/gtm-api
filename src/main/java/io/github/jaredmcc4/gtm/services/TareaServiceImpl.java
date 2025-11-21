@@ -36,7 +36,7 @@ public class TareaServiceImpl implements TareaService {
         log.debug("""
                 Filtrando tareas para el usuario con ID: {}
                 Estado: {}
-                Título: {}
+                Titulo: {}
                 Prioridad: {}""", usuarioId, estado, titulo, prioridad);
         return tareaRepository.findByFilters(usuarioId, estado, prioridad, titulo, pageable);
     }
@@ -55,10 +55,10 @@ public class TareaServiceImpl implements TareaService {
 
     @Override
     public List<Tarea> obtenerTareasProximasVencimiento(Long usuarioId, int cantidadDias) {
-        LocalDateTime rn = LocalDateTime.now();
-        LocalDateTime limite = rn.plusDays(cantidadDias);
-        log.debug("Obteniendo tareas próximas a vencer para el usuario con ID: {} Desde: {} Hasta: {}", usuarioId, rn, limite);
-        return tareaRepository.findProximasVencer(usuarioId, rn, limite);
+        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime limite = ahora.plusDays(cantidadDias);
+        log.debug("Obteniendo tareas proximas a vencer Usuario ID: {} Desde: {} Hasta: {}", usuarioId, ahora, limite);
+        return tareaRepository.findProximasVencer(usuarioId, ahora, limite);
     }
 
     @Override
@@ -80,7 +80,7 @@ public class TareaServiceImpl implements TareaService {
     @Override
     @Transactional
     public Tarea actualizarTarea(Long tareaId, Tarea tareaActualizada, Long usuarioId) {
-        log.info("Actualizando tarea con ID: {} Usuario con ID: {}", tareaId, usuarioId);
+        log.info("Actualizando tarea con ID: {} Usuario ID: {}", tareaId, usuarioId);
         Tarea tareaExistente = obtenerTareaPorIdYUsuarioId(tareaId, usuarioId);
         actualizarCamposTarea(tareaExistente, tareaActualizada);
         validarTarea(tareaExistente);
@@ -90,7 +90,7 @@ public class TareaServiceImpl implements TareaService {
     @Override
     @Transactional
     public void eliminarTarea(Long tareaId, Long usuarioId) {
-        log.info("Eliminando tarea con ID: {} Usuario con ID: {}", tareaId, usuarioId);
+        log.info("Eliminando tarea con ID: {} Usuario ID: {}", tareaId, usuarioId);
         Tarea tareaExistente = obtenerTareaPorIdYUsuarioId(tareaId, usuarioId);
         tareaRepository.delete(tareaExistente);
     }
@@ -108,7 +108,7 @@ public class TareaServiceImpl implements TareaService {
             throw new IllegalArgumentException("El título de la tarea no puede estar vacío");
         }
         if (tarea.getTitulo().length() < 3 || tarea.getTitulo().length() > 120) {
-            throw new IllegalArgumentException("El título debe tener entre 3 y 120 caracteres");
+            throw new IllegalArgumentException("El titulo debe tener Entre 3 y 120 caracteres");
         }
     }
 
@@ -133,4 +133,3 @@ public class TareaServiceImpl implements TareaService {
         }
     }
 }
-
