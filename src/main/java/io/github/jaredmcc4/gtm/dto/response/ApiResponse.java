@@ -12,14 +12,14 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@Schema(description = "Respuesta estándar de la API. success=true cuando la operación fue exitosa.")
+@Schema(description = "Respuesta estandar de la API. success=true cuando la operacion fue exitosa.")
 public class ApiResponse<T> {
 
-    @Schema(description = "Indica si la operación fue exitosa.", example = "true")
+    @Schema(description = "Indica si la operacion fue exitosa.", example = "true")
     private Boolean success;
     @Schema(description = "Payload principal de la respuesta.")
     private T data;
-    @Schema(description = "Mensaje informativo o de error.", example = "Operación realizada con éxito")
+    @Schema(description = "Mensaje informativo o de error.", example = "Operacion realizada con exito")
     private String message;
     @Schema(description = "Detalles adicionales de error cuando success=false.")
     private Object errors;
@@ -32,7 +32,7 @@ public class ApiResponse<T> {
                 .build();
     }
 
-    public static <T> ApiResponse<T> error(String message, Object errors){
+    public static <T> ApiResponse<T> error(String message, Object errors) {
         return ApiResponse.<T>builder()
                 .success(false)
                 .message(message)

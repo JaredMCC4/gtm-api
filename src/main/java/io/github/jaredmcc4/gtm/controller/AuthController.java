@@ -32,10 +32,10 @@ public class AuthController {
     private final UsuarioMapper usuarioMapper;
 
     @Operation(summary = "Registrar nuevo usuario", description = "Crea una cuenta nueva.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Usuario registrado",
+    @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Usuario registrado",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Email ya existe o datos invalidos",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Email ya existe o datos invalidos",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class)))
     })
     @PostMapping("/registro")
@@ -48,10 +48,10 @@ public class AuthController {
     }
 
     @Operation(summary = "Iniciar sesion", description = "Autentica al usuario y devuelve JWT + Refresh Token.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Autenticacion exitosa",
+    @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Autenticacion exitosa",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class))),
-            @ApiResponse(responseCode = "401", description = "Credenciales invalidas o usuario inactivo",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Credenciales invalidas o usuario inactivo",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class)))
     })
     @PostMapping("/login")
@@ -62,10 +62,10 @@ public class AuthController {
     }
 
     @Operation(summary = "Refrescar token JWT", description = "Genera un nuevo JWT usando el Refresh Token valido.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Token refrescado",
+    @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Token refrescado",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class))),
-            @ApiResponse(responseCode = "401", description = "Refresh token invalido, revocado o expirado",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Refresh token invalido, revocado o expirado",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class)))
     })
     @PostMapping("/refresh")
@@ -76,10 +76,10 @@ public class AuthController {
     }
 
     @Operation(summary = "Cerrar sesion", description = "Revoca el refresh token del usuario.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Sesion cerrada",
+    @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Sesion cerrada",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class))),
-            @ApiResponse(responseCode = "404", description = "Refresh token no encontrado",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Refresh token no encontrado",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class)))
     })
     @PostMapping("/logout")
@@ -90,10 +90,10 @@ public class AuthController {
     }
 
     @Operation(summary = "Validar token JWT", description = "Verifica si el token JWT proporcionado es valido.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Token valido",
+    @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Token valido",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class))),
-            @ApiResponse(responseCode = "401", description = "Token invalido o expirado",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Token invalido o expirado",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class)))
     })
     @PostMapping("/validar")

@@ -56,12 +56,12 @@ public class SubtareaController {
             summary = "Obtener subtareas de una tarea",
             description = "Muestra todas las subtareas de una tarea especifica."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Subtareas obtenidas",
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Subtareas obtenidas",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class))),
-            @ApiResponse(responseCode = "401", description = "No autenticado",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "No autenticado",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "404", description = "Tarea no encontrada",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Tarea no encontrada",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @GetMapping("/tarea/{tareaId}")
@@ -85,14 +85,14 @@ public class SubtareaController {
             summary = "Crear subtarea",
             description = "Agrega una nueva subtarea a una tarea existente."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Subtarea creada",
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Subtarea creada",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Datos invalidos",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Datos invalidos",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "401", description = "No autenticado",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "No autenticado",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "404", description = "Tarea no encontrada",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Tarea no encontrada",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping("/tarea/{tareaId}")
@@ -118,14 +118,14 @@ public class SubtareaController {
             summary = "Actualizar subtarea",
             description = "Modifica el titulo o estado de completado de una subtarea."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Subtarea actualizada",
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Subtarea actualizada",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Datos invalidos",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Datos invalidos",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "401", description = "No autenticado",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "No autenticado",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "404", description = "Subtarea no encontrada",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Subtarea no encontrada",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PutMapping("/{id}")
@@ -149,12 +149,12 @@ public class SubtareaController {
             summary = "Eliminar subtarea",
             description = "Elimina una subtarea."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Subtarea eliminada",
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Subtarea eliminada",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class))),
-            @ApiResponse(responseCode = "401", description = "No autenticado",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "No autenticado",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "404", description = "Subtarea no encontrada",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Subtarea no encontrada",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @DeleteMapping("/{id}")

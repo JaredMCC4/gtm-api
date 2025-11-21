@@ -55,10 +55,10 @@ public class EtiquetaController {
     }
 
     @Operation(summary = "Obtener todas las etiquetas del usuario", description = "Lista completa de etiquetas personalizadas.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Etiquetas obtenidas",
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Etiquetas obtenidas",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class))),
-            @ApiResponse(responseCode = "401", description = "No autenticado",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "No autenticado",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @GetMapping
@@ -77,12 +77,12 @@ public class EtiquetaController {
     }
 
     @Operation(summary = "Obtener etiqueta por ID", description = "Detalle de una etiqueta especifica.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Etiqueta encontrada",
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Etiqueta encontrada",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class))),
-            @ApiResponse(responseCode = "401", description = "No autenticado",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "No autenticado",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "404", description = "Etiqueta no encontrada",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Etiqueta no encontrada",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @GetMapping("/{id}")
@@ -101,12 +101,12 @@ public class EtiquetaController {
     }
 
     @Operation(summary = "Crear nueva etiqueta", description = "Crea una etiqueta con nombre y color hexadecimal unicos.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Etiqueta creada",
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Etiqueta creada",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Datos invalidos / duplicados",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Datos invalidos / duplicados",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "401", description = "No autenticado",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "No autenticado",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping
@@ -129,14 +129,14 @@ public class EtiquetaController {
     }
 
     @Operation(summary = "Actualizar etiqueta", description = "Modifica el nombre y color de una etiqueta.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Etiqueta actualizada",
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Etiqueta actualizada",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Datos invalidos / duplicados",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Datos invalidos / duplicados",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "401", description = "No autenticado",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "No autenticado",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "404", description = "Etiqueta no encontrada",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Etiqueta no encontrada",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PutMapping("/{id}")
@@ -157,12 +157,12 @@ public class EtiquetaController {
     }
 
     @Operation(summary = "Eliminar etiqueta", description = "Elimina una etiqueta y la desvincula de todas las tareas.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Etiqueta eliminada",
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Etiqueta eliminada",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class))),
-            @ApiResponse(responseCode = "401", description = "No autenticado",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "No autenticado",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "404", description = "Etiqueta no encontrada",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Etiqueta no encontrada",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @DeleteMapping("/{id}")

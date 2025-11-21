@@ -1,11 +1,6 @@
 package io.github.jaredmcc4.gtm.controller;
 
-import io.github.jaredmcc4.gtm.domain.Tarea;
-import io.github.jaredmcc4.gtm.dto.response.ApiResponse;
-import io.github.jaredmcc4.gtm.dto.response.ErrorResponse;
-import io.github.jaredmcc4.gtm.dto.response.PageResponse;
-import io.github.jaredmcc4.gtm.dto.tarea.ActualizarTareaRequest;
-import io.github.jaredmcc4.gtm.dto.tarea.CrearTareaRequest;
+import io.github.jaredmcc4.gtm.dto.tarea.EstadisticasDto;
 import io.github.jaredmcc4.gtm.dto.tarea.TareaDto;
 import io.github.jaredmcc4.gtm.exception.UnauthorizedException;
 import io.github.jaredmcc4.gtm.mapper.TareaMapper;
@@ -71,10 +66,10 @@ public class TareaController {
             summary = "Obtener todas las tareas",
             description = "Lista paginada de tareas del usuario, ordenadas por fecha de creacion (DESC por defecto)."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Tareas obtenidas",
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Tareas obtenidas",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class))),
-            @ApiResponse(responseCode = "401", description = "No autenticado",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "No autenticado",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @GetMapping
@@ -110,10 +105,10 @@ public class TareaController {
             summary = "Buscar tareas por texto",
             description = "Busqueda en titulo y descripcion de las tareas del usuario."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Busqueda completada",
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Busqueda completada",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class))),
-            @ApiResponse(responseCode = "401", description = "No autenticado",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "No autenticado",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @GetMapping("/buscar")
@@ -137,10 +132,10 @@ public class TareaController {
             summary = "Filtrar tareas",
             description = "Filtra por estado, prioridad y/o titulo."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Filtro aplicado",
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Filtro aplicado",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class))),
-            @ApiResponse(responseCode = "401", description = "No autenticado",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "No autenticado",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @GetMapping("/filtrar")
@@ -167,12 +162,12 @@ public class TareaController {
             summary = "Obtener tareas por etiqueta",
             description = "Lista de tareas asociadas a una etiqueta especifica."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Tareas encontradas",
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Tareas encontradas",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class))),
-            @ApiResponse(responseCode = "401", description = "No autenticado",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "No autenticado",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "404", description = "Etiqueta no encontrada",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Etiqueta no encontrada",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @GetMapping("/etiqueta/{etiquetaId}")
@@ -196,10 +191,10 @@ public class TareaController {
             summary = "Obtener tareas proximas a vencer",
             description = "Lista de tareas PENDIENTE que vencen en los proximos N dias."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Lista obtenida",
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Lista obtenida",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class))),
-            @ApiResponse(responseCode = "401", description = "No autenticado",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "No autenticado",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @GetMapping("/proximas-vencer")
@@ -220,14 +215,14 @@ public class TareaController {
             summary = "Obtener estadisticas de tareas",
             description = "Conteo de tareas por estado para el usuario."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Estadisticas obtenidas",
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Estadisticas obtenidas",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class))),
-            @ApiResponse(responseCode = "401", description = "No autenticado",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "No autenticado",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @GetMapping("/estadisticas")
-    public ResponseEntity<ApiResponse<Object>> obtenerEstadisticas(@Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<ApiResponse<EstadisticasDto>> obtenerEstadisticas(@Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt) {
         Long usuarioId = resolverUsuarioId(jwt);
         log.info("GET /api/v1/tareas/estadisticas - Usuario ID: {}", usuarioId);
 
@@ -236,12 +231,12 @@ public class TareaController {
         long canceladas = tareaService.contarTareasPorEstado(usuarioId, Tarea.EstadoTarea.CANCELADA);
         long total = pendientes + completadas + canceladas;
 
-        Map<String, Long> estadisticas = Map.of(
-                "pendientes", pendientes,
-                "completadas", completadas,
-                "canceladas", canceladas,
-                "total", total
-        );
+        EstadisticasDto estadisticas = EstadisticasDto.builder()
+                .pendientes(pendientes)
+                .completadas(completadas)
+                .canceladas(canceladas)
+                .total(total)
+                .build();
 
         return ResponseEntity.ok(ApiResponse.success("Estadisticas obtenidas", estadisticas));
     }
@@ -250,12 +245,12 @@ public class TareaController {
             summary = "Obtener una tarea por ID",
             description = "Detalle completo de una tarea."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Tarea encontrada",
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Tarea encontrada",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class))),
-            @ApiResponse(responseCode = "401", description = "No autenticado",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "No autenticado",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "404", description = "Tarea no encontrada",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Tarea no encontrada",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @GetMapping("/{id}")
@@ -276,12 +271,12 @@ public class TareaController {
             summary = "Crear nueva tarea",
             description = "Crea una tarea con estado PENDIENTE por defecto."
     )
-    @ApiResponses({
-        @ApiResponse(responseCode = "201", description = "Tarea creada",
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Tarea creada",
                 content = @Content(schema = @Schema(implementation = ApiResponse.class))),
-        @ApiResponse(responseCode = "400", description = "Datos invalidos",
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Datos invalidos",
                 content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-        @ApiResponse(responseCode = "401", description = "No autenticado",
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "No autenticado",
                 content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping
@@ -312,14 +307,14 @@ public class TareaController {
             summary = "Actualizar tarea",
             description = "Modifica los campos de una tarea existente."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Tarea actualizada",
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Tarea actualizada",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Datos invalidos",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Datos invalidos",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "401", description = "No autenticado",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "No autenticado",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "404", description = "Tarea no encontrada",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Tarea no encontrada",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PutMapping("/{id}")
@@ -349,12 +344,12 @@ public class TareaController {
             summary = "Eliminar tarea",
             description = "Elimina una tarea y todas sus subtareas y adjuntos asociados."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Tarea eliminada",
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Tarea eliminada",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class))),
-            @ApiResponse(responseCode = "401", description = "No autenticado",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "No autenticado",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "404", description = "Tarea no encontrada",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Tarea no encontrada",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @DeleteMapping("/{id}")

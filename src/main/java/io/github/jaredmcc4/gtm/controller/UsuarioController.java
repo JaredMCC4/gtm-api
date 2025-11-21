@@ -51,10 +51,10 @@ public class UsuarioController {
     }
 
     @Operation(summary = "Obtener perfil del usuario autenticado", description = "Informacion completa del usuario.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Perfil obtenido",
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Perfil obtenido",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class))),
-            @ApiResponse(responseCode = "401", description = "No autenticado",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "No autenticado",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @GetMapping("/perfil")
@@ -71,12 +71,12 @@ public class UsuarioController {
     }
 
     @Operation(summary = "Actualizar perfil de usuario", description = "Modificar nombre y zona horaria.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Perfil actualizado",
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Perfil actualizado",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Datos invalidos",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Datos invalidos",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "401", description = "No autenticado",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "No autenticado",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PutMapping("/perfil")
@@ -100,12 +100,12 @@ public class UsuarioController {
     }
 
     @Operation(summary = "Cambiar contrasena", description = "Modifica la contrasena del usuario autenticado.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Contrasena cambiada",
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Contrasena cambiada",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Datos invalidos",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Datos invalidos",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "401", description = "No autenticado",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "No autenticado",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PatchMapping("/cambiar-password")
