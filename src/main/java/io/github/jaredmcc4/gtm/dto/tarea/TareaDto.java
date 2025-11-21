@@ -1,6 +1,5 @@
 package io.github.jaredmcc4.gtm.dto.tarea;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import io.github.jaredmcc4.gtm.domain.Tarea;
 import io.github.jaredmcc4.gtm.dto.etiqueta.EtiquetaDto;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -12,40 +11,36 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.Set;
 
+/**
+ * DTO de salida para tareas, usado en las respuestas de la API.
+ */
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
-@Schema(description = "Representacion de una tarea del usuario.")
+@AllArgsConstructor
+@NoArgsConstructor
 public class TareaDto {
-
-    @Schema(description = "Identificador de la tarea", example = "25")
+    @Schema(example = "1")
     private Long id;
 
-    @Schema(description = "Titulo de la tarea", example = "Implementar login")
+    @Schema(description = "Titulo de la tarea", example = "Realizar backup semanal")
     private String titulo;
 
-    @Schema(description = "Descripcion opcional", example = "Incluir validaciones y mensajes de error")
+    @Schema(description = "Descripcion detallada", example = "Hacer backup incremental de la base de datos")
     private String descripcion;
 
-    @Schema(description = "Prioridad asignada", example = "ALTA")
+    @Schema(description = "Prioridad de la tarea")
     private Tarea.Prioridad prioridad;
 
-    @Schema(description = "Estado actual", example = "PENDIENTE")
+    @Schema(description = "Estado actual de la tarea")
     private Tarea.EstadoTarea estado;
 
-    @Schema(description = "Fecha y hora de vencimiento en ISO-8601", example = "2025-12-31T17:00:00")
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    @Schema(description = "Fecha de vencimiento en formato ISO", example = "2025-12-31T23:59:59")
     private String fechaVencimiento;
 
     @Schema(description = "Etiquetas asociadas")
     private Set<EtiquetaDto> etiquetas;
 
-    @Schema(description = "Fecha de creacion", example = "2025-11-20T12:34:56")
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime createdAt;
-
-    @Schema(description = "Fecha de ultima actualizacion", example = "2025-11-21T09:15:00")
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime updatedAt;
 }
+

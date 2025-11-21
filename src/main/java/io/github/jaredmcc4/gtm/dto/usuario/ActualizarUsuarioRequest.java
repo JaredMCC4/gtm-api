@@ -7,17 +7,19 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Payload para actualizar datos basicos del usuario.
+ */
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
-@Schema(description = "Payload para actualizar el perfil del usuario.")
+@AllArgsConstructor
+@NoArgsConstructor
 public class ActualizarUsuarioRequest {
-
-    @Schema(description = "Nombre visible del usuario", example = "Jared Ch")
-    @Size(max = 120, message = "El nombre no puede exceder los {max} caracteres.")
+    @Size(max = 120)
+    @Schema(description = "Nombre de usuario a mostrar", example = "Juan Perez")
     private String nombreUsuario;
 
-    @Schema(description = "Zona horaria preferida", example = "America/Costa_Rica")
+    @Schema(description = "Zona horaria IANA", example = "America/Costa_Rica")
     private String zonaHoraria;
 }
+

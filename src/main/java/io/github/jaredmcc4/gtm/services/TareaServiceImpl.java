@@ -14,21 +14,25 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Implementacion de {@link TareaService} que aplica validaciones de negocio para tareas.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class TareaServiceImpl implements TareaService{
+public class TareaServiceImpl implements TareaService {
 
     private final TareaRepository tareaRepository;
 
     @Override
-    public Page<Tarea> obtenerTareasPorUsuarioId(Long usuarioId, Pageable pageable){
+    public Page<Tarea> obtenerTareasPorUsuarioId(Long usuarioId, Pageable pageable) {
         log.debug("Obteniendo tareas para el usuario con ID: {}", usuarioId);
         return tareaRepository.findByUsuarioId(usuarioId, pageable);
     }
+
     @Override
-    public Page<Tarea> filtrarTareas(Long usuarioId, Tarea.EstadoTarea estado, String titulo,Tarea.Prioridad prioridad, Pageable pageable){
+    public Page<Tarea> filtrarTareas(Long usuarioId, Tarea.EstadoTarea estado, String titulo, Tarea.Prioridad prioridad, Pageable pageable) {
         log.debug("""
                 Filtrando tareas para el usuario con ID: {}
                 Estado: {}
@@ -38,40 +42,35 @@ public class TareaServiceImpl implements TareaService{
     }
 
     @Override
-    public Page<Tarea> buscarTareasPorTexto(Long usuarioId, String texto, Pageable pageable){
-        log.debug("Buscando tareas para el usuario con ID: {}\n" +
-                "Texto: {}", usuarioId, texto);
+    public Page<Tarea> buscarTareasPorTexto(Long usuarioId, String texto, Pageable pageable) {
+        log.debug("Buscando tareas para el usuario con ID: {} Texto: {}", usuarioId, texto);
         return tareaRepository.searchByTexto(usuarioId, texto, pageable);
     }
 
     @Override
-    public Page<Tarea> obtenerTareasPorEtiquetaId(Long etiquetaId, Long usuarioId,Pageable pageable){
-        log.debug("Obteniendo tareas para el usuario con ID: {}\n" +
-                "Etiqueta ID: {}", usuarioId, etiquetaId);
+    public Page<Tarea> obtenerTareasPorEtiquetaId(Long etiquetaId, Long usuarioId, Pageable pageable) {
+        log.debug("Obteniendo tareas para el usuario con ID: {} Etiqueta ID: {}", usuarioId, etiquetaId);
         return tareaRepository.findByUsuarioIdAndEtiquetaId(usuarioId, etiquetaId, pageable);
     }
 
     @Override
-    public List<Tarea> obtenerTareasProximasVencimiento(Long usuarioId, int cantidadDias){
+    public List<Tarea> obtenerTareasProximasVencimiento(Long usuarioId, int cantidadDias) {
         LocalDateTime rn = LocalDateTime.now();
         LocalDateTime limite = rn.plusDays(cantidadDias);
-        log.debug("Obteniendo tareas próximas a vencer para el usuario con ID: {}\n" +
-                "Desde: {}\n" +
-                "Hasta: {}", usuarioId, rn, limite);
+        log.debug("Obteniendo tareas próximas a vencer para el usuario con ID: {} Desde: {} Hasta: {}", usuarioId, rn, limite);
         return tareaRepository.findProximasVencer(usuarioId, rn, limite);
     }
 
     @Override
-    public Tarea obtenerTareaPorIdYUsuarioId(Long tareaId, Long usuarioId){
-        log.debug("Obteniendo tarea con ID: {}\n" +
-                "Usuario ID: {}", tareaId, usuarioId);
+    public Tarea obtenerTareaPorIdYUsuarioId(Long tareaId, Long usuarioId) {
+        log.debug("Obteniendo tarea con ID: {} Usuario ID: {}", tareaId, usuarioId);
         return tareaRepository.findByIdAndUsuarioId(tareaId, usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException("No encontrada o no pertenece al usuario"));
     }
 
     @Override
     @Transactional
-    public Tarea crearTarea(Tarea tarea, Usuario usuario){
+    public Tarea crearTarea(Tarea tarea, Usuario usuario) {
         log.info("Creando nueva tarea para el usuario con ID: {}", usuario.getId());
         tarea.setUsuario(usuario);
         validarTarea(tarea);
@@ -80,9 +79,8 @@ public class TareaServiceImpl implements TareaService{
 
     @Override
     @Transactional
-    public Tarea actualizarTarea(Long tareaId, Tarea tareaActualizada, Long usuarioId){
-        log.info("Actualizando tarea con ID: {}\n" +
-                "Usuario con ID: {}", tareaId, usuarioId);
+    public Tarea actualizarTarea(Long tareaId, Tarea tareaActualizada, Long usuarioId) {
+        log.info("Actualizando tarea con ID: {} Usuario con ID: {}", tareaId, usuarioId);
         Tarea tareaExistente = obtenerTareaPorIdYUsuarioId(tareaId, usuarioId);
         actualizarCamposTarea(tareaExistente, tareaActualizada);
         validarTarea(tareaExistente);
@@ -91,27 +89,32 @@ public class TareaServiceImpl implements TareaService{
 
     @Override
     @Transactional
-    public void eliminarTarea(Long tareaId, Long usuarioId){
-        log.info("Eliminando tarea con ID: {}\n" +
-                "Usuario con ID: {}", tareaId, usuarioId);
+    public void eliminarTarea(Long tareaId, Long usuarioId) {
+        log.info("Eliminando tarea con ID: {} Usuario con ID: {}", tareaId, usuarioId);
         Tarea tareaExistente = obtenerTareaPorIdYUsuarioId(tareaId, usuarioId);
         tareaRepository.delete(tareaExistente);
     }
 
     @Override
-    public long contarTareasPorEstado(Long usuarioId, Tarea.EstadoTarea estado){
+    public long contarTareasPorEstado(Long usuarioId, Tarea.EstadoTarea estado) {
         return tareaRepository.countByUsuarioIdAndEstado(usuarioId, estado);
     }
 
-    private void validarTarea(Tarea tarea){
+    /**
+     * Valida titulo y longitud minima/maxima de la tarea.
+     */
+    private void validarTarea(Tarea tarea) {
         if (tarea.getTitulo() == null || tarea.getTitulo().trim().isEmpty()) {
             throw new IllegalArgumentException("El título de la tarea no puede estar vacío");
         }
         if (tarea.getTitulo().length() < 3 || tarea.getTitulo().length() > 120) {
-            throw new IllegalArgumentException("Entre 3 y 120 caracteres");
+            throw new IllegalArgumentException("El título debe tener entre 3 y 120 caracteres");
         }
     }
 
+    /**
+     * Aplica actualizaciones parciales a la tarea existente.
+     */
     private void actualizarCamposTarea(Tarea tareaExistente, Tarea tareaActualizada) {
         if (tareaActualizada.getTitulo() != null) {
             tareaExistente.setTitulo(tareaActualizada.getTitulo());
@@ -130,3 +133,4 @@ public class TareaServiceImpl implements TareaService{
         }
     }
 }
+

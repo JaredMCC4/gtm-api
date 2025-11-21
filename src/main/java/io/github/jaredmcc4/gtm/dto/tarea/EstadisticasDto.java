@@ -6,18 +6,21 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * DTO que resume conteos de tareas por estado para un usuario.
+ */
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Schema(description = "Conteo de tareas por estado.")
 public class EstadisticasDto {
-    @Schema(description = "Total de tareas pendientes.", example = "15")
+    @Schema(description = "Cantidad de tareas pendientes", example = "12")
     private long pendientes;
-    @Schema(description = "Total de tareas completadas.", example = "25")
+    @Schema(description = "Cantidad de tareas completadas", example = "30")
     private long completadas;
-    @Schema(description = "Total de tareas canceladas.", example = "5")
+    @Schema(description = "Cantidad de tareas canceladas", example = "5")
     private long canceladas;
-    @Schema(description = "Total de tareas del usuario.", example = "45")
+    @Schema(description = "Total de tareas", example = "47")
     private long total;
 }
+

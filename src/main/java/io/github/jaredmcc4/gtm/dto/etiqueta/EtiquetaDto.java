@@ -9,23 +9,25 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * DTO para crear/actualizar/mostrar etiquetas del usuario.
+ */
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
-@Schema(description = "Etiqueta asociable a las tareas de un usuario.")
+@AllArgsConstructor
+@NoArgsConstructor
 public class EtiquetaDto {
-
-    @Schema(description = "Identificador de la etiqueta", example = "3")
+    @Schema(example = "1")
     private Long id;
 
-    @Schema(description = "Nombre visible de la etiqueta", example = "Backend")
-    @NotBlank(message = "El nombre no puede estar vacio.")
-    @Size(max = 60, message = "El nombre no puede exceder los {max} caracteres.")
+    @NotBlank
+    @Size(max = 60)
+    @Schema(description = "Nombre de la etiqueta", example = "Urgente")
     private String nombre;
 
-    @Schema(description = "Color en formato hexadecimal #RRGGBB", example = "#FF6600")
-    @NotBlank(message = "El color no puede estar vacio.")
-    @Pattern(regexp = "^#[0-9A-Fa-f]{6}$", message = "El color debe seguir el formato hexadecimal (#RRGGBB).")
+    @NotBlank
+    @Pattern(regexp = "^#[0-9A-Fa-f]{6}$")
+    @Schema(description = "Color en formato hexadecimal", example = "#FF0000")
     private String colorHex;
 }
+

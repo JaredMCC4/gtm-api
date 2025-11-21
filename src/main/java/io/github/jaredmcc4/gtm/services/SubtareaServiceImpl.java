@@ -12,18 +12,25 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * Implementacion de {@link SubtareaService} que valida propiedad del usuario
+ * y reglas de longitud/titulo para subtareas.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class SubtareaServiceImpl implements SubtareaService{
+public class SubtareaServiceImpl implements SubtareaService {
 
     private final TareaRepository tareaRepository;
     private final SubtareaRepository subtareaRepository;
 
+    /**
+     * Crea una subtarea en una tarea del usuario, validando titulo.
+     */
     @Override
     @Transactional
-    public Subtarea crearSubtarea(Long tareaId, Subtarea subtarea, Long usuarioId){
+    public Subtarea crearSubtarea(Long tareaId, Subtarea subtarea, Long usuarioId) {
         Tarea tarea = tareaRepository.findByIdAndUsuarioId(tareaId, usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tarea no encontrada o no pertenece al usuario."));
         validarSubtarea(subtarea);
@@ -31,15 +38,17 @@ public class SubtareaServiceImpl implements SubtareaService{
         return subtareaRepository.save(subtarea);
     }
 
+    /**
+     * Actualiza titulo o estado de una subtarea del usuario.
+     */
     @Override
     @Transactional
-    public Subtarea actualizarSubtarea(Long subtareaId, Subtarea subtareaActualizada, Long usuarioId){
-        log.info("Actualizando subtarea con ID: {}\n" +
-                "Usuario ID: {}", subtareaId, usuarioId);
+    public Subtarea actualizarSubtarea(Long subtareaId, Subtarea subtareaActualizada, Long usuarioId) {
+        log.info("Actualizando subtarea con ID: {} Usuario ID: {}", subtareaId, usuarioId);
         Subtarea actual = obtenerSubtareaPropia(subtareaId, usuarioId);
 
         if (subtareaActualizada.getTitulo() != null && !subtareaActualizada.getTitulo().isBlank()) {
-            if (subtareaActualizada.getTitulo().length() > 120){
+            if (subtareaActualizada.getTitulo().length() > 120) {
                 throw new IllegalArgumentException("El título de la subtarea no puede ser mayor a 120 caracteres.");
             }
             actual.setTitulo(subtareaActualizada.getTitulo());
@@ -51,21 +60,30 @@ public class SubtareaServiceImpl implements SubtareaService{
         return subtareaRepository.save(actual);
     }
 
+    /**
+     * Elimina una subtarea del usuario.
+     */
     @Override
     @Transactional
-    public void eliminarSubtarea(Long subtareaId, Long usuarioId){
+    public void eliminarSubtarea(Long subtareaId, Long usuarioId) {
         Subtarea actual = obtenerSubtareaPropia(subtareaId, usuarioId);
         subtareaRepository.delete(actual);
     }
 
+    /**
+     * Lista las subtareas de una tarea, verificando que la tarea pertenece al usuario.
+     */
     @Override
-    public List<Subtarea> mostrarSubtareas(Long tareaId, Long usuarioId){
+    public List<Subtarea> mostrarSubtareas(Long tareaId, Long usuarioId) {
         tareaRepository.findByIdAndUsuarioId(tareaId, usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tarea no encontrada o no pertenece al usuario."));
         return subtareaRepository.findByTareaId(tareaId);
     }
 
-    private void validarSubtarea(Subtarea subtarea){
+    /**
+     * Valida reglas de titulo para una subtarea.
+     */
+    private void validarSubtarea(Subtarea subtarea) {
         if (subtarea.getTitulo() == null || subtarea.getTitulo().trim().isEmpty()) {
             throw new IllegalArgumentException("El título de la subtarea no puede estar vacío.");
         }
@@ -75,9 +93,17 @@ public class SubtareaServiceImpl implements SubtareaService{
         }
     }
 
-    private Subtarea obtenerSubtareaPropia(Long subtareaId, Long usuarioId){
+    /**
+     * Recupera una subtarea asegurando que pertenece al usuario.
+     *
+     * @param subtareaId id de la subtarea
+     * @param usuarioId propietario autenticado
+     * @return subtarea validada
+     */
+    private Subtarea obtenerSubtareaPropia(Long subtareaId, Long usuarioId) {
         return subtareaRepository.findById(subtareaId)
                 .filter(subtarea -> subtarea.getTarea() != null && subtarea.getTarea().getUsuario().getId().equals(usuarioId))
                 .orElseThrow(() -> new ResourceNotFoundException("Subtarea no encontrada o no pertenece al usuario."));
     }
 }
+

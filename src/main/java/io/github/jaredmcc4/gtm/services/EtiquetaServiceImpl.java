@@ -13,27 +13,37 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.regex.Pattern;
 
+/**
+ * Implementacion de {@link EtiquetaService} que gestiona etiquetas con reglas de unicidad
+ * por usuario y validacion de color hexadecimal.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class EtiquetaServiceImpl implements EtiquetaService{
+public class EtiquetaServiceImpl implements EtiquetaService {
 
     private final EtiquetaRepository etiquetaRepository;
     private static final Pattern COLOR_HEX_PATTERN = Pattern.compile("^#[0-9A-Fa-f]{6}$");
 
+    /**
+     * Lista todas las etiquetas de un usuario.
+     */
     @Override
-    public List<Etiqueta> obtenerEtiquetasPorUsuarioId(Long usuarioId){
+    public List<Etiqueta> obtenerEtiquetasPorUsuarioId(Long usuarioId) {
         log.debug("Obteniendo etiquetas para el usuario con ID: {}", usuarioId);
         return etiquetaRepository.findByUsuarioId(usuarioId);
     }
 
+    /**
+     * Crea una etiqueta unica para el usuario tras validar nombre y color.
+     */
     @Override
     @Transactional
-    public Etiqueta crearEtiqueta(Etiqueta etiqueta, Usuario usuario){
+    public Etiqueta crearEtiqueta(Etiqueta etiqueta, Usuario usuario) {
         log.info("Creando nueva etiqueta para el usuario con ID: {}", usuario.getId());
 
-        if(existeEtiquetaPorNombreYUsuarioId(etiqueta.getNombre(), usuario.getId())){
+        if (existeEtiquetaPorNombreYUsuarioId(etiqueta.getNombre(), usuario.getId())) {
             throw new DuplicateResourceException("Ya existe una etiqueta con el nombre: " + etiqueta.getNombre());
         }
 
@@ -42,10 +52,12 @@ public class EtiquetaServiceImpl implements EtiquetaService{
         return etiquetaRepository.save(etiqueta);
     }
 
+    /**
+     * Obtiene una etiqueta y verifica que pertenezca al usuario.
+     */
     @Override
-    public Etiqueta obtenerEtiquetaPorIdYUsuarioId(Long etiquetaId, Long usuarioId){
-        log.debug("Obteniendo etiqueta con ID: {}\n" +
-                "Usuario ID: {}", etiquetaId, usuarioId);
+    public Etiqueta obtenerEtiquetaPorIdYUsuarioId(Long etiquetaId, Long usuarioId) {
+        log.debug("Obteniendo etiqueta con ID: {} Usuario ID: {}", etiquetaId, usuarioId);
         Etiqueta etiqueta = etiquetaRepository.findById(etiquetaId)
                 .orElseThrow(() -> new IllegalArgumentException("Etiqueta no encontrada con ID: " + etiquetaId));
 
@@ -56,15 +68,17 @@ public class EtiquetaServiceImpl implements EtiquetaService{
         return etiqueta;
     }
 
+    /**
+     * Actualiza nombre y color, asegurando unicidad por usuario.
+     */
     @Override
     @Transactional
-    public Etiqueta actualizarEtiqueta(Long etiquetaId, Etiqueta etiquetaActualizada, Long usuarioId){
-        log.info("Actualizando etiqueta con ID: {}\n" +
-                "Usuario ID: {}", etiquetaId, usuarioId);
+    public Etiqueta actualizarEtiqueta(Long etiquetaId, Etiqueta etiquetaActualizada, Long usuarioId) {
+        log.info("Actualizando etiqueta con ID: {} Usuario ID: {}", etiquetaId, usuarioId);
         Etiqueta etiquetaActual = obtenerEtiquetaPorIdYUsuarioId(etiquetaId, usuarioId);
 
         if (!etiquetaActual.getNombre().equals(etiquetaActualizada.getNombre()) &&
-            existeEtiquetaPorNombreYUsuarioId(etiquetaActualizada.getNombre(), usuarioId)) {
+                existeEtiquetaPorNombreYUsuarioId(etiquetaActualizada.getNombre(), usuarioId)) {
             throw new DuplicateResourceException("Ya existe una etiqueta con el nombre: " + etiquetaActualizada.getNombre());
         }
 
@@ -74,33 +88,44 @@ public class EtiquetaServiceImpl implements EtiquetaService{
         return etiquetaRepository.save(etiquetaActual);
     }
 
+    /**
+     * Elimina una etiqueta del usuario.
+     */
     @Override
     @Transactional
-    public void eliminarEtiqueta(Long etiquetaId, Long usuarioId){
-        log.info("Eliminando etiqueta con ID: {}\n" +
-                "Usuario ID: {}", etiquetaId, usuarioId);
+    public void eliminarEtiqueta(Long etiquetaId, Long usuarioId) {
+        log.info("Eliminando etiqueta con ID: {} Usuario ID: {}", etiquetaId, usuarioId);
         Etiqueta etiquetaExistente = obtenerEtiquetaPorIdYUsuarioId(etiquetaId, usuarioId);
         etiquetaRepository.delete(etiquetaExistente);
     }
 
+    /**
+     * Verifica si el usuario ya posee una etiqueta con el nombre indicado.
+     */
     @Override
-    public boolean existeEtiquetaPorNombreYUsuarioId(String nombre, Long usuarioId){
-        log.debug("Verificando existencia de etiqueta con nombre: {}\n" +
-                "Usuario ID: {}", nombre, usuarioId);
+    public boolean existeEtiquetaPorNombreYUsuarioId(String nombre, Long usuarioId) {
+        log.debug("Verificando existencia de etiqueta con nombre: {} Usuario ID: {}", nombre, usuarioId);
         return etiquetaRepository.existsByUsuarioIdAndNombre(usuarioId, nombre);
     }
 
-    private void validarEtiqueta(Etiqueta etiqueta){
-        if(etiqueta.getNombre() == null || etiqueta.getNombre().trim().isEmpty()){
+    /**
+     * Valida reglas de negocio de la etiqueta: nombre obligatorio/longitud y color Hex.
+     *
+     * @param etiqueta etiqueta a validar
+     * @throws IllegalArgumentException si no cumple las reglas
+     */
+    private void validarEtiqueta(Etiqueta etiqueta) {
+        if (etiqueta.getNombre() == null || etiqueta.getNombre().trim().isEmpty()) {
             throw new IllegalArgumentException("El nombre de la etiqueta no puede estar vacío.");
         }
 
-        if (etiqueta.getNombre().length() >60) {
+        if (etiqueta.getNombre().length() > 60) {
             throw new IllegalArgumentException("El nombre de la etiqueta no puede exceder los 60 caracteres.");
         }
 
-        if(etiqueta.getColorHex() == null || !COLOR_HEX_PATTERN.matcher(etiqueta.getColorHex()).matches()){
+        if (etiqueta.getColorHex() == null || !COLOR_HEX_PATTERN.matcher(etiqueta.getColorHex()).matches()) {
             throw new IllegalArgumentException("El color hexadecimal de la etiqueta no es válido. Debe tener el formato #RRGGBB.");
         }
     }
 }
+

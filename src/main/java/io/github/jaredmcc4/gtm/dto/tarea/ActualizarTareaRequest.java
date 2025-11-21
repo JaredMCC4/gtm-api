@@ -1,9 +1,7 @@
 package io.github.jaredmcc4.gtm.dto.tarea;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import io.github.jaredmcc4.gtm.domain.Tarea;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,31 +11,31 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.Set;
 
+/**
+ * Payload para actualizar una tarea existente.
+ */
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
-@Schema(description = "Payload para actualizar una tarea existente.")
+@AllArgsConstructor
+@NoArgsConstructor
 public class ActualizarTareaRequest {
-
-    @Schema(description = "Titulo de la tarea", example = "Implementar login")
-    @NotBlank(message = "El titulo no puede estar vacio.")
-    @Size(min = 3, max = 120, message = "El titulo debe tener entre {min} y {max} caracteres.")
+    @Size(min = 3, max = 120)
+    @Schema(example = "Actualizar dashboard de métricas")
     private String titulo;
 
-    @Schema(description = "Descripcion opcional", example = "Incluir validaciones y mensajes de error")
+    @Schema(example = "Agregar grafico de latencia por endpoint")
     private String descripcion;
 
-    @Schema(description = "Prioridad de la tarea", example = "ALTA")
+    @Schema(description = "Prioridad de la tarea")
     private Tarea.Prioridad prioridad;
 
-    @Schema(description = "Estado de la tarea", example = "PENDIENTE")
+    @Schema(description = "Estado de la tarea")
     private Tarea.EstadoTarea estado;
 
-    @Schema(description = "Fecha y hora de vencimiento", example = "2025-12-31T17:00:00")
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    @Schema(description = "Fecha de vencimiento en ISO", example = "2025-12-31T12:00:00")
     private LocalDateTime fechaVencimiento;
 
-    @Schema(description = "IDs de etiquetas asociadas", example = "[1,2]")
+    @Schema(description = "IDs de etiquetas asociadas")
     private Set<Long> etiquetasIds;
 }
+

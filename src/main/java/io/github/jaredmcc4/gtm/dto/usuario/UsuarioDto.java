@@ -9,28 +9,25 @@ import lombok.NoArgsConstructor;
 
 import java.util.Set;
 
+/**
+ * DTO de salida para exponer datos visibles del usuario.
+ */
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
-@Schema(description = "Informacion publica del usuario.")
+@AllArgsConstructor
+@NoArgsConstructor
 public class UsuarioDto {
-
-    @Schema(description = "Identificador del usuario", example = "1")
+    @Schema(example = "1")
     private Long id;
-
-    @Schema(description = "Email del usuario", example = "admin@example.com")
+    @Schema(description = "Correo electrónico", example = "user@example.com")
     private String email;
-
-    @Schema(description = "Nombre visible", example = "GTM_ADMIN")
+    @Schema(description = "Nombre de usuario para mostrar", example = "Juan Perez")
     private String nombreUsuario;
-
-    @Schema(description = "Zona horaria configurada", example = "America/Costa_Rica")
+    @Schema(description = "Zona horaria IANA", example = "America/Costa_Rica")
     private String zonaHoraria;
-
-    @Schema(description = "Indicador de si la cuenta esta activa", example = "true")
+    @Schema(description = "Indica si la cuenta está activa", example = "true")
     private boolean activo;
-
-    @Schema(description = "Roles asignados")
+    @Schema(description = "Roles asociados al usuario")
     private Set<RolDto> roles;
 }
+

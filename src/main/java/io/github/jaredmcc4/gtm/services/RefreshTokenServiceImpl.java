@@ -12,6 +12,9 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Implementacion de {@link RefreshTokenService} con persistencia en base de datos.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -20,6 +23,9 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     private final RefreshTokenRepository refreshTokenRepository;
 
+    /**
+     * Crea y guarda un refresh token para el usuario con la vigencia indicada.
+     */
     @Override
     @Transactional
     public RefreshToken crearRefreshToken(Usuario usuario, long validezTiempo) {
@@ -31,12 +37,18 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         return refreshTokenRepository.save(refreshToken);
     }
 
+    /**
+     * Valida que el token exista, no este revocado y no haya expirado.
+     */
     @Override
     public Optional<RefreshToken> validarRefreshToken(String token) {
         return refreshTokenRepository.findByTokenAndRevokedFalse(token)
                 .filter(rt -> rt.getExpiresAt().isAfter(LocalDateTime.now()));
     }
 
+    /**
+     * Marca como revocado un refresh token especifico.
+     */
     @Override
     @Transactional
     public void revocarRefreshToken(String token) {
@@ -46,9 +58,13 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         });
     }
 
+    /**
+     * Elimina los tokens cuya fecha de expiracion ya paso.
+     */
     @Override
     @Transactional
     public void limpiarRefreshTokensExpirados() {
         refreshTokenRepository.deleteExpiredTokens(LocalDateTime.now());
     }
 }
+

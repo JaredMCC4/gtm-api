@@ -8,19 +8,21 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Payload para solicitar cambio de contraseña.
+ */
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
-@Schema(description = "Solicitud para cambiar la contrasena del usuario.")
+@AllArgsConstructor
+@NoArgsConstructor
 public class CambiarPasswordRequest {
-
-    @Schema(description = "Contrasena actual", example = "PasswordActual1!")
-    @NotBlank(message = "La contrasena actual no puede estar vacia.")
+    @NotBlank
+    @Schema(description = "Contraseña actual del usuario", example = "OldP@ssw0rd")
     private String contrasenaActual;
 
-    @Schema(description = "Nueva contrasena", example = "PasswordNueva2!")
-    @NotBlank(message = "La nueva contrasena no puede estar vacia.")
-    @Size(min = 8, message = "La contrasena debe tener al menos {min} caracteres.")
+    @NotBlank
+    @Size(min = 8)
+    @Schema(description = "Nueva contraseña (min 8 caracteres)", example = "Nuev0P@ss!")
     private String nuevaContrasena;
 }
+

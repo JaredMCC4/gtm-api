@@ -9,6 +9,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Implementacion de {@link UsuarioService} orientada a perfil y cambio de contraseña.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -18,35 +21,44 @@ public class UsuarioServiceImpl implements UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
 
+    /**
+     * Recupera un usuario por ID o lanza excepcion si no existe.
+     */
     @Override
-    public Usuario obtenerUsuarioPorId(Long usuarioId){
+    public Usuario obtenerUsuarioPorId(Long usuarioId) {
         log.debug("Obteniendo usuario con ID: {}", usuarioId);
         return usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
     }
 
+    /**
+     * Actualiza nombre y zona horaria cuando se proporcionan valores validos.
+     */
     @Override
     @Transactional
-    public Usuario actualizarUsuario(Long usuarioId, Usuario datosActualizados){
+    public Usuario actualizarUsuario(Long usuarioId, Usuario datosActualizados) {
         log.info("Actualizando usuario con ID: {}", usuarioId);
         Usuario usuario = obtenerUsuarioPorId(usuarioId);
-        if (datosActualizados.getNombreUsuario() != null && !datosActualizados.getNombreUsuario().isBlank()){
-            if (datosActualizados.getNombreUsuario().length() > 120){
+        if (datosActualizados.getNombreUsuario() != null && !datosActualizados.getNombreUsuario().isBlank()) {
+            if (datosActualizados.getNombreUsuario().length() > 120) {
                 throw new IllegalArgumentException("El nombre de usuario no puede ser mayor a 120 caracteres.");
             }
             usuario.setNombreUsuario(datosActualizados.getNombreUsuario());
         }
 
-        if (datosActualizados.getZonaHoraria() != null){
+        if (datosActualizados.getZonaHoraria() != null) {
             usuario.setZonaHoraria(datosActualizados.getZonaHoraria());
         }
 
         return usuarioRepository.save(usuario);
     }
 
+    /**
+     * Cambia la contraseña validando la actual y reglas basicas de longitud y diferencia.
+     */
     @Override
     @Transactional
-    public void cambiarPassword(Long usuarioId, String passwordActual, String passwordNueva){
+    public void cambiarPassword(Long usuarioId, String passwordActual, String passwordNueva) {
         log.info("Cambiando contraseña del usuario con ID: {}", usuarioId);
         Usuario usuario = obtenerUsuarioPorId(usuarioId);
         if (!passwordEncoder.matches(passwordActual, usuario.getContrasenaHash())) {
@@ -63,3 +75,4 @@ public class UsuarioServiceImpl implements UsuarioService {
         usuarioRepository.save(usuario);
     }
 }
+
