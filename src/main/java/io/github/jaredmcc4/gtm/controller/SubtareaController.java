@@ -2,6 +2,7 @@ package io.github.jaredmcc4.gtm.controller;
 
 import io.github.jaredmcc4.gtm.domain.Subtarea;
 import io.github.jaredmcc4.gtm.dto.response.ApiResponse;
+import io.github.jaredmcc4.gtm.dto.response.ErrorResponse;
 import io.github.jaredmcc4.gtm.dto.subtarea.SubtareaDto;
 import io.github.jaredmcc4.gtm.exception.UnauthorizedException;
 import io.github.jaredmcc4.gtm.mapper.SubtareaMapper;
@@ -10,6 +11,10 @@ import io.github.jaredmcc4.gtm.util.JwtExtractorUtil;
 import io.github.jaredmcc4.gtm.util.JwtUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -29,7 +34,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/v1/subtareas")
 @RequiredArgsConstructor
 @SecurityRequirement(name = "bearerAuth")
-@Tag(name = "Subtareas", description = "Gestión de subtareas.")
+@Tag(name = "Subtareas", description = "Gestion de subtareas.")
 public class SubtareaController {
 
     private final SubtareaService subtareaService;
@@ -47,12 +52,23 @@ public class SubtareaController {
         throw new UnauthorizedException("No se pudo determinar el usuario autenticado");
     }
 
-    @Operation(summary = "Obtener subtareas de una tarea", description = "Muestra todas las subtareas de una tarea específica.")
+    @Operation(
+            summary = "Obtener subtareas de una tarea",
+            description = "Muestra todas las subtareas de una tarea especifica."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Subtareas obtenidas",
+                    content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @ApiResponse(responseCode = "401", description = "No autenticado",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Tarea no encontrada",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @GetMapping("/tarea/{tareaId}")
     public ResponseEntity<ApiResponse<List<SubtareaDto>>> obtenerSubtareasPorTarea(
-            @AuthenticationPrincipal Jwt jwt,
+            @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt,
             @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
-            @Parameter(description = "ID de la tarea") @PathVariable Long tareaId
+            @Parameter(description = "ID de la tarea", example = "10") @PathVariable Long tareaId
     ) {
         Long usuarioId = resolveUsuarioId(jwt, authorizationHeader);
         log.info("GET /api/v1/subtareas/tarea/{} - Usuario ID: {}", tareaId, usuarioId);
@@ -65,16 +81,29 @@ public class SubtareaController {
         return ResponseEntity.ok(ApiResponse.success("Subtareas obtenidas exitosamente", subtareasDto));
     }
 
-    @Operation(summary = "Crear subtarea", description = "Agrega una nueva subtarea a una tarea existente.")
+    @Operation(
+            summary = "Crear subtarea",
+            description = "Agrega una nueva subtarea a una tarea existente."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Subtarea creada",
+                    content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Datos invalidos",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "No autenticado",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Tarea no encontrada",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @PostMapping("/tarea/{tareaId}")
     public ResponseEntity<ApiResponse<SubtareaDto>> crearSubtarea(
-            @AuthenticationPrincipal Jwt jwt,
+            @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt,
             @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
-            @Parameter(description = "ID de la tarea") @PathVariable Long tareaId,
+            @Parameter(description = "ID de la tarea", example = "10") @PathVariable Long tareaId,
             @Valid @RequestBody SubtareaDto subtareaDto
     ) {
         Long usuarioId = resolveUsuarioId(jwt, authorizationHeader);
-        log.info("POST /api/v1/subtareas/tarea/{} - Usuario ID: {}, Título: '{}'",
+        log.info("POST /api/v1/subtareas/tarea/{} - Usuario ID: {}, Titulo: '{}'",
                 tareaId, usuarioId, subtareaDto.getTitulo());
 
         Subtarea subtarea = subtareaMapper.toEntity(subtareaDto);
@@ -85,12 +114,25 @@ public class SubtareaController {
                 .body(ApiResponse.success("Subtarea creada exitosamente", subtareaDtoCreada));
     }
 
-    @Operation(summary = "Actualizar subtarea", description = "Modifica el título o estado de completado de una subtarea.")
+    @Operation(
+            summary = "Actualizar subtarea",
+            description = "Modifica el titulo o estado de completado de una subtarea."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Subtarea actualizada",
+                    content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Datos invalidos",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "No autenticado",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Subtarea no encontrada",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<SubtareaDto>> actualizarSubtarea(
-            @AuthenticationPrincipal Jwt jwt,
+            @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt,
             @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
-            @Parameter(description = "ID de la subtarea") @PathVariable Long id,
+            @Parameter(description = "ID de la subtarea", example = "15") @PathVariable Long id,
             @Valid @RequestBody SubtareaDto subtareaDto
     ) {
         Long usuarioId = resolveUsuarioId(jwt, authorizationHeader);
@@ -103,12 +145,23 @@ public class SubtareaController {
         return ResponseEntity.ok(ApiResponse.success("Subtarea actualizada exitosamente", subtareaDtoActualizada));
     }
 
-    @Operation(summary = "Eliminar subtarea", description = "Elimina una subtarea elegida.")
+    @Operation(
+            summary = "Eliminar subtarea",
+            description = "Elimina una subtarea."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Subtarea eliminada",
+                    content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @ApiResponse(responseCode = "401", description = "No autenticado",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Subtarea no encontrada",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> eliminarSubtarea(
-            @AuthenticationPrincipal Jwt jwt,
+            @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt,
             @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
-            @Parameter(description = "ID de la subtarea") @PathVariable Long id
+            @Parameter(description = "ID de la subtarea", example = "15") @PathVariable Long id
     ) {
         Long usuarioId = resolveUsuarioId(jwt, authorizationHeader);
         log.info("DELETE /api/v1/subtareas/{} - Usuario ID: {}", id, usuarioId);

@@ -1,6 +1,7 @@
 package io.github.jaredmcc4.gtm.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,11 +12,16 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@Schema(description = "Respuesta estándar de la API. success=true cuando la operación fue exitosa.")
 public class ApiResponse<T> {
 
+    @Schema(description = "Indica si la operación fue exitosa.", example = "true")
     private Boolean success;
+    @Schema(description = "Payload principal de la respuesta.")
     private T data;
+    @Schema(description = "Mensaje informativo o de error.", example = "Operación realizada con éxito")
     private String message;
+    @Schema(description = "Detalles adicionales de error cuando success=false.")
     private Object errors;
 
     public static <T> ApiResponse<T> success(String message, T data) {

@@ -197,6 +197,33 @@
                     </excludes>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.8.0</version>
+                <configuration>
+                    <doclet>com.github.chms.coverage.CoverageDoclet</doclet>
+                    <docletArtifact>
+                        <groupId>com.github.chms</groupId>
+                        <artifactId>javadoc-coverage-doclet</artifactId>
+                        <version>1.1.2</version>
+                    </docletArtifact>
+                    <additionalOptions>
+                        <additionalOption>-output-path ${project.build.directory}/javadoc-coverage.json</additionalOption>
+                        <additionalOption>-output-type json</additionalOption>
+                    </additionalOptions>
+                    <detectJavaApiLink>false</detectJavaApiLink>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>javadoc-coverage</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>javadoc</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

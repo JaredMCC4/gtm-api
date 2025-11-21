@@ -111,7 +111,7 @@ class UsuarioControllerTests {
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
-                    .andExpect(jsonPath("$.message").value("Contraseña cambiada exitosamente"));
+                    .andExpect(jsonPath("$.message").value("Contrasena cambiada exitosamente"));
 
             verify(usuarioService).cambiarPassword(1L, "OldPassword123!", "NewPassword123!");
         }

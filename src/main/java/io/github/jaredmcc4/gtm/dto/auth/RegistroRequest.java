@@ -1,5 +1,6 @@
 package io.github.jaredmcc4.gtm.dto.auth;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -10,17 +11,23 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Schema(description = "Solicitud de registro de usuario.")
 public class RegistroRequest {
-    @NotBlank(message = "El email no puede estar vacío.")
-    @Email(message = "Debe ser un email válido.")
+
+    @Schema(description = "Email único del usuario", example = "nuevo@example.com")
+    @NotBlank(message = "El email no puede estar vacio.")
+    @Email(message = "Debe ser un email valido.")
     private String email;
 
-    @NotBlank(message = "La contraseña no puede estar vacía.")
-    @Size(min = 8, message = "La contraseña debe tener al menos {min} caracteres.")
+    @Schema(description = "Contraseña en texto plano", example = "PasswordSegura1!")
+    @NotBlank(message = "La contrasena no puede estar vacia.")
+    @Size(min = 8, message = "La contrasena debe tener al menos {min} caracteres.")
     private String password;
 
+    @Schema(description = "Nombre visible del usuario", example = "Usuario GTM")
     @Size(max = 120, message = "El nombre de usuario no puede exceder los {max} caracteres.")
     private String nombreUsuario;
 
+    @Schema(description = "Zona horaria preferida", example = "America/Costa_Rica")
     private String zonaHoraria = "America/Costa_Rica";
 }

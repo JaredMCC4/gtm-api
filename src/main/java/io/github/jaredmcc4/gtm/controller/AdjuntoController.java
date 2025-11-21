@@ -3,6 +3,7 @@ package io.github.jaredmcc4.gtm.controller;
 import io.github.jaredmcc4.gtm.domain.Adjunto;
 import io.github.jaredmcc4.gtm.dto.adjunto.AdjuntoDto;
 import io.github.jaredmcc4.gtm.dto.response.ApiResponse;
+import io.github.jaredmcc4.gtm.dto.response.ErrorResponse;
 import io.github.jaredmcc4.gtm.exception.UnauthorizedException;
 import io.github.jaredmcc4.gtm.mapper.AdjuntoMapper;
 import io.github.jaredmcc4.gtm.services.AdjuntoService;
@@ -12,6 +13,9 @@ import io.github.jaredmcc4.gtm.validator.FileValidator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +38,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/v1/adjuntos")
 @RequiredArgsConstructor
 @SecurityRequirement(name = "bearerAuth")
-@Tag(name = "Adjuntos", description = "Gestión de adjuntos en tareas.")
+@Tag(name = "Adjuntos", description = "Gestion de adjuntos en tareas.")
 public class AdjuntoController {
 
     private final AdjuntoService adjuntoService;
@@ -42,7 +46,6 @@ public class AdjuntoController {
     private final JwtUtil jwtUtil;
 
     private Long resolveUsuarioId(Jwt jwt, String authorizationHeader) {
-
         if (jwt != null) {
             return JwtExtractorUtil.extractUsuarioId(jwt);
         }
@@ -53,13 +56,23 @@ public class AdjuntoController {
         throw new UnauthorizedException("No se pudo determinar el usuario autenticado");
     }
 
-    @PostMapping("/tarea/{tareaId}")
     @Operation(summary = "Subir un archivo adjunto a una tarea")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Archivo subido",
+                    content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Archivo invalido",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "No autenticado",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Tarea no encontrada",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    @PostMapping("/tarea/{tareaId}")
     public ResponseEntity<ApiResponse<AdjuntoDto>> subirAdjunto(
-            @PathVariable Long tareaId,
+            @Parameter(description = "ID de la tarea", example = "10") @PathVariable Long tareaId,
             @RequestParam("file") MultipartFile file,
-            @AuthenticationPrincipal Jwt jwt,
-            @RequestHeader(value = "Authorization", required = false) String authorizationHeader){
+            @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
 
         Long usuarioId = resolveUsuarioId(jwt, authorizationHeader);
         log.info("Usuario {} subiendo adjunto a tarea {}", usuarioId, tareaId);
@@ -74,10 +87,18 @@ public class AdjuntoController {
     }
 
     @Operation(summary = "Obtener adjuntos de una tarea", description = "Muestra todos los archivos adjuntos de una tarea.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Adjuntos obtenidos",
+                    content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @ApiResponse(responseCode = "401", description = "No autenticado",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Tarea no encontrada",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @GetMapping("/tarea/{tareaId}")
     public ResponseEntity<ApiResponse<List<AdjuntoDto>>> obtenerAdjuntosPorTarea(
-            @PathVariable Long tareaId,
-            @AuthenticationPrincipal Jwt jwt,
+            @Parameter(description = "ID de la tarea", example = "10") @PathVariable Long tareaId,
+            @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt,
             @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
 
         Long usuarioId = resolveUsuarioId(jwt, authorizationHeader);
@@ -92,10 +113,17 @@ public class AdjuntoController {
     }
 
     @Operation(summary = "Descargar archivo adjunto", description = "Descarga el archivo seleccionado.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Archivo descargado"),
+            @ApiResponse(responseCode = "401", description = "No autenticado",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Adjunto no encontrado",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @GetMapping("/{adjuntoId}/descargar")
     public ResponseEntity<Resource> descargarAdjunto(
-            @PathVariable Long adjuntoId,
-            @AuthenticationPrincipal Jwt jwt,
+            @Parameter(description = "ID del adjunto", example = "5") @PathVariable Long adjuntoId,
+            @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt,
             @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
 
         Long usuarioId = resolveUsuarioId(jwt, authorizationHeader);
@@ -112,17 +140,24 @@ public class AdjuntoController {
     }
 
     @Operation(summary = "Eliminar archivo adjunto", description = "Elimina un archivo del sistema y de la base de datos.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Adjunto eliminado",
+                    content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @ApiResponse(responseCode = "401", description = "No autenticado",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Adjunto no encontrado",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @DeleteMapping("/{adjuntoId}")
     public ResponseEntity<ApiResponse<Void>> eliminarAdjunto(
-            @PathVariable Long adjuntoId,
-            @AuthenticationPrincipal Jwt jwt,
+            @Parameter(description = "ID del adjunto", example = "5") @PathVariable Long adjuntoId,
+            @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt,
             @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
 
         Long usuarioId = resolveUsuarioId(jwt, authorizationHeader);
         log.info("Usuario {} eliminando adjunto {}", usuarioId, adjuntoId);
 
         adjuntoService.eliminarAdjunto(adjuntoId, usuarioId);
-
         return ResponseEntity.ok(ApiResponse.success("Adjunto eliminado exitosamente", null));
     }
 }

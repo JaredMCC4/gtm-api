@@ -92,7 +92,7 @@ class AuthControllerTests {
                     .id(1L)
                     .email(request.getEmail())
                     .nombreUsuario(request.getNombreUsuario())
-                    .enabled(true)
+                    .activo(true)
                     .build();
 
             when(authService.registrarUsuario(any(RegistroRequest.class))).thenReturn(usuario);
@@ -328,7 +328,7 @@ class AuthControllerTests {
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
-                    .andExpect(jsonPath("$.message").value("Sesión cerrada exitosamente"));
+                    .andExpect(jsonPath("$.message").value("Sesion cerrada exitosamente"));
 
             verify(authService).cerrarSesion("token-to-revoke");
         }

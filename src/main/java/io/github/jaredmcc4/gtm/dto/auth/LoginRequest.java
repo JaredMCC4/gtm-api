@@ -1,5 +1,6 @@
 package io.github.jaredmcc4.gtm.dto.auth;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -11,12 +12,15 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Schema(description = "Solicitud de inicio de sesión con email y contraseña.")
 public class LoginRequest {
 
-    @NotBlank(message = "El email no puede estar vacío.")
-    @Email(message = "Debe introducir un email válido.")
+    @Schema(description = "Email del usuario", example = "admin@example.com")
+    @NotBlank(message = "El email no puede estar vacio.")
+    @Email(message = "Debe introducir un email valido.")
     private String email;
 
-    @NotBlank(message = "La contraseña no puede estar vacía.")
+    @Schema(description = "Contraseña en texto plano", example = "password123.")
+    @NotBlank(message = "La contrasena no puede estar vacia.")
     private String password;
 }

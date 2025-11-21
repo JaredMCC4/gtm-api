@@ -2,6 +2,7 @@ package io.github.jaredmcc4.gtm.controller;
 
 import io.github.jaredmcc4.gtm.domain.Tarea;
 import io.github.jaredmcc4.gtm.dto.response.ApiResponse;
+import io.github.jaredmcc4.gtm.dto.response.ErrorResponse;
 import io.github.jaredmcc4.gtm.dto.response.PageResponse;
 import io.github.jaredmcc4.gtm.dto.tarea.ActualizarTareaRequest;
 import io.github.jaredmcc4.gtm.dto.tarea.CrearTareaRequest;
@@ -14,6 +15,9 @@ import io.github.jaredmcc4.gtm.util.JwtUtil;
 import io.github.jaredmcc4.gtm.util.PageUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -26,8 +30,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
@@ -43,7 +47,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/v1/tareas")
 @RequiredArgsConstructor
 @SecurityRequirement(name = "bearerAuth")
-@Tag(name = "Tareas", description = "Gestión de todas las tareas del usuario.")
+@Tag(name = "Tareas", description = "Gestion de todas las tareas del usuario")
 public class TareaController {
 
     private final TareaService tareaService;
@@ -63,16 +67,25 @@ public class TareaController {
         throw new UnauthorizedException("Token JWT requerido.");
     }
 
-    @Operation(summary = "Obtener todas las tareas del usuario", description = "Muestra una lista de tareas ordenadas por fecha de creación descendente.")
+    @Operation(
+            summary = "Obtener todas las tareas",
+            description = "Lista paginada de tareas del usuario, ordenadas por fecha de creacion (DESC por defecto)."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Tareas obtenidas",
+                    content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @ApiResponse(responseCode = "401", description = "No autenticado",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<TareaDto>>> obtenerTareas(
-            @AuthenticationPrincipal Jwt jwt,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "DESC") String direction,
-            @RequestParam(required = false) Tarea.EstadoTarea estado,
-            @RequestParam(required = false) String search
+            @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt,
+            @Parameter(description = "Numero de pagina (0-based)", example = "0") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Tamano de pagina", example = "10") @RequestParam(defaultValue = "10") int size,
+            @Parameter(description = "Campo para ordenar", example = "createdAt") @RequestParam(defaultValue = "createdAt") String sortBy,
+            @Parameter(description = "Direccion de orden", example = "DESC") @RequestParam(defaultValue = "DESC") String direction,
+            @Parameter(description = "Filtrar por estado") @RequestParam(required = false) Tarea.EstadoTarea estado,
+            @Parameter(description = "Texto a buscar en titulo/descripcion") @RequestParam(required = false) String search
     ) {
         Long usuarioId = resolverUsuarioId(jwt);
 
@@ -90,17 +103,25 @@ public class TareaController {
         }
 
         PageResponse<TareaDto> pageResponse = PageUtil.toPageResponse(tareaPage, tareaMapper::toDto);
-
         return ResponseEntity.ok(ApiResponse.success("Tareas obtenidas exitosamente", pageResponse));
     }
 
-    @Operation(summary = "Buscar tareas por texto", description = "Búsqueda en título y descripción.")
+    @Operation(
+            summary = "Buscar tareas por texto",
+            description = "Busqueda en titulo y descripcion de las tareas del usuario."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Busqueda completada",
+                    content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @ApiResponse(responseCode = "401", description = "No autenticado",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @GetMapping("/buscar")
     public ResponseEntity<ApiResponse<PageResponse<TareaDto>>> buscarTareas(
-            @AuthenticationPrincipal Jwt jwt,
-            @Parameter(description = "Texto a buscar") @RequestParam String texto,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt,
+            @Parameter(description = "Texto a buscar", example = "login") @RequestParam String texto,
+            @Parameter(description = "Numero de pagina (0-based)", example = "0") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Tamano de pagina", example = "10") @RequestParam(defaultValue = "10") int size
     ) {
         Long usuarioId = resolverUsuarioId(jwt);
         log.info("GET /api/v1/tareas/buscar - Usuario ID: {}, Texto: '{}'", usuarioId, texto);
@@ -109,21 +130,30 @@ public class TareaController {
         Page<Tarea> tareaPage = tareaService.buscarTareasPorTexto(usuarioId, texto, pageable);
         PageResponse<TareaDto> pageResponse = PageUtil.toPageResponse(tareaPage, tareaMapper::toDto);
 
-        return ResponseEntity.ok(ApiResponse.success("Búsqueda completada", pageResponse));
+        return ResponseEntity.ok(ApiResponse.success("Busqueda completada", pageResponse));
     }
 
-    @Operation(summary = "Filtrar tareas", description = "Filtra por estado, prioridad y/o título.")
+    @Operation(
+            summary = "Filtrar tareas",
+            description = "Filtra por estado, prioridad y/o titulo."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Filtro aplicado",
+                    content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @ApiResponse(responseCode = "401", description = "No autenticado",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @GetMapping("/filtrar")
     public ResponseEntity<ApiResponse<PageResponse<TareaDto>>> filtrarTareas(
-            @AuthenticationPrincipal Jwt jwt,
-            @Parameter(description = "Estado de la tarea") @RequestParam(required = false) Tarea.EstadoTarea estado,
-            @Parameter(description = "Prioridad de la tarea") @RequestParam(required = false) Tarea.Prioridad prioridad,
-            @Parameter(description = "Parte del título") @RequestParam(required = false) String titulo,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+        @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt,
+        @Parameter(description = "Estado de la tarea") @RequestParam(required = false) Tarea.EstadoTarea estado,
+        @Parameter(description = "Prioridad de la tarea") @RequestParam(required = false) Tarea.Prioridad prioridad,
+        @Parameter(description = "Parte del titulo") @RequestParam(required = false) String titulo,
+        @Parameter(description = "Numero de pagina (0-based)", example = "0") @RequestParam(defaultValue = "0") int page,
+        @Parameter(description = "Tamano de pagina", example = "10") @RequestParam(defaultValue = "10") int size
     ) {
         Long usuarioId = resolverUsuarioId(jwt);
-        log.info("GET /api/v1/tareas/filtrar - Usuario ID: {}, Estado: {}, Prioridad: {}, Título: '{}'",
+        log.info("GET /api/v1/tareas/filtrar - Usuario ID: {}, Estado: {}, Prioridad: {}, Titulo: '{}'",
                 usuarioId, estado, prioridad, titulo);
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
@@ -133,13 +163,24 @@ public class TareaController {
         return ResponseEntity.ok(ApiResponse.success("Filtrado completado", pageResponse));
     }
 
-    @Operation(summary = "Obtener tareas por etiqueta", description = "Lista de tareas asociadas a una etiqueta específica.")
+    @Operation(
+            summary = "Obtener tareas por etiqueta",
+            description = "Lista de tareas asociadas a una etiqueta especifica."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Tareas encontradas",
+                    content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @ApiResponse(responseCode = "401", description = "No autenticado",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Etiqueta no encontrada",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @GetMapping("/etiqueta/{etiquetaId}")
     public ResponseEntity<ApiResponse<PageResponse<TareaDto>>> obtenerTareasPorEtiqueta(
-            @AuthenticationPrincipal Jwt jwt,
-            @Parameter(description = "ID de la etiqueta") @PathVariable Long etiquetaId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt,
+            @Parameter(description = "ID de la etiqueta", example = "5") @PathVariable Long etiquetaId,
+            @Parameter(description = "Numero de pagina (0-based)", example = "0") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Tamano de pagina", example = "10") @RequestParam(defaultValue = "10") int size
     ) {
         Long usuarioId = resolverUsuarioId(jwt);
         log.info("GET /api/v1/tareas/etiqueta/{} - Usuario ID: {}", etiquetaId, usuarioId);
@@ -151,26 +192,42 @@ public class TareaController {
         return ResponseEntity.ok(ApiResponse.success("Tareas obtenidas por etiqueta", pageResponse));
     }
 
-    @Operation(summary = "Obtener tareas próximas a vencer", description = "Lista de tareas pendientes que vencen en los próximamente.")
+    @Operation(
+            summary = "Obtener tareas proximas a vencer",
+            description = "Lista de tareas PENDIENTE que vencen en los proximos N dias."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista obtenida",
+                    content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @ApiResponse(responseCode = "401", description = "No autenticado",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @GetMapping("/proximas-vencer")
     public ResponseEntity<ApiResponse<List<TareaDto>>> obtenerTareasProximasVencer(
-            @AuthenticationPrincipal Jwt jwt,
-            @Parameter(description = "Cantidad de días a futuro") @RequestParam(defaultValue = "7") int dias
+            @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt,
+            @Parameter(description = "Cantidad de dias a futuro", example = "7") @RequestParam(defaultValue = "7") int dias
     ) {
         Long usuarioId = resolverUsuarioId(jwt);
-        log.info("GET /api/v1/tareas/proximas-vencer - Usuario ID: {}, Días: {}", usuarioId, dias);
+        log.info("GET /api/v1/tareas/proximas-vencer - Usuario ID: {}, Dias: {}", usuarioId, dias);
 
         List<Tarea> tareas = tareaService.obtenerTareasProximasVencimiento(usuarioId, dias);
-        List<TareaDto> tareasDto = tareas.stream()
-                .map(tareaMapper::toDto)
-                .collect(Collectors.toList());
+        List<TareaDto> tareasDto = tareas.stream().map(tareaMapper::toDto).collect(Collectors.toList());
 
-        return ResponseEntity.ok(ApiResponse.success("Tareas próximas a vencer obtenidas", tareasDto));
+        return ResponseEntity.ok(ApiResponse.success("Tareas proximas a vencer obtenidas", tareasDto));
     }
 
-    @Operation(summary = "Obtener estadísticas de tareas", description = "Conteo de tareas por estado")
+    @Operation(
+            summary = "Obtener estadisticas de tareas",
+            description = "Conteo de tareas por estado para el usuario."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Estadisticas obtenidas",
+                    content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @ApiResponse(responseCode = "401", description = "No autenticado",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @GetMapping("/estadisticas")
-    public ResponseEntity<ApiResponse<Object>> obtenerEstadisticas(@AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<ApiResponse<Object>> obtenerEstadisticas(@Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt) {
         Long usuarioId = resolverUsuarioId(jwt);
         log.info("GET /api/v1/tareas/estadisticas - Usuario ID: {}", usuarioId);
 
@@ -181,19 +238,30 @@ public class TareaController {
 
         Map<String, Long> estadisticas = Map.of(
                 "pendientes", pendientes,
-                "completadas",completadas,
+                "completadas", completadas,
                 "canceladas", canceladas,
                 "total", total
         );
 
-        return ResponseEntity.ok(ApiResponse.success("Estadísticas obtenidas", estadisticas));
+        return ResponseEntity.ok(ApiResponse.success("Estadisticas obtenidas", estadisticas));
     }
 
-    @Operation(summary = "Obtener una tarea por ID", description = "Detalle completo de una tarea específica.")
+    @Operation(
+            summary = "Obtener una tarea por ID",
+            description = "Detalle completo de una tarea."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Tarea encontrada",
+                    content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @ApiResponse(responseCode = "401", description = "No autenticado",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Tarea no encontrada",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<TareaDto>> obtenerTareaPorId(
-            @AuthenticationPrincipal Jwt jwt,
-            @Parameter(description = "ID de la tarea") @PathVariable Long id
+            @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt,
+            @Parameter(description = "ID de la tarea", example = "10") @PathVariable Long id
     ) {
         Long usuarioId = resolverUsuarioId(jwt);
         log.info("GET /api/v1/tareas/{} - Usuario ID: {}", id, usuarioId);
@@ -204,14 +272,25 @@ public class TareaController {
         return ResponseEntity.ok(ApiResponse.success("Tarea obtenida exitosamente", tareaDto));
     }
 
-    @Operation(summary = "Crear nueva tarea", description = "Crea una tarea con estado PENDIENTE por defecto.")
+    @Operation(
+            summary = "Crear nueva tarea",
+            description = "Crea una tarea con estado PENDIENTE por defecto."
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "Tarea creada",
+                content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+        @ApiResponse(responseCode = "400", description = "Datos invalidos",
+                content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "401", description = "No autenticado",
+                content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @PostMapping
     public ResponseEntity<ApiResponse<TareaDto>> crearTarea(
-            @AuthenticationPrincipal Jwt jwt,
+            @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody CrearTareaRequest request
     ) {
         Long usuarioId = resolverUsuarioId(jwt);
-        log.info("POST /api/v1/tareas - Usuario ID: {}, Título: '{}'", usuarioId, request.getTitulo());
+        log.info("POST /api/v1/tareas - Usuario ID: {}, Titulo: '{}'", usuarioId, request.getTitulo());
 
         var usuario = usuarioService.obtenerUsuarioPorId(usuarioId);
 
@@ -229,11 +308,24 @@ public class TareaController {
                 .body(ApiResponse.success("Tarea creada exitosamente", tareaDto));
     }
 
-    @Operation(summary = "Actualizar tarea", description = "Modifica los campos de una tarea existente.")
+    @Operation(
+            summary = "Actualizar tarea",
+            description = "Modifica los campos de una tarea existente."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Tarea actualizada",
+                    content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Datos invalidos",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "No autenticado",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Tarea no encontrada",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<TareaDto>> actualizarTarea(
-            @AuthenticationPrincipal Jwt jwt,
-            @Parameter(description = "ID de la tarea") @PathVariable Long id,
+            @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt,
+            @Parameter(description = "ID de la tarea", example = "10") @PathVariable Long id,
             @Valid @RequestBody ActualizarTareaRequest request
     ) {
         Long usuarioId = resolverUsuarioId(jwt);
@@ -244,8 +336,7 @@ public class TareaController {
                 .descripcion(request.getDescripcion())
                 .prioridad(request.getPrioridad())
                 .estado(request.getEstado())
-                .fechaVencimiento(request.getFechaVencimiento() != null ?
-                        LocalDateTime.parse(request.getFechaVencimiento(), DateTimeFormatter.ISO_DATE_TIME) : null)
+                .fechaVencimiento(request.getFechaVencimiento())
                 .build();
 
         Tarea tarea = tareaService.actualizarTarea(id, tareaActualizada, usuarioId);
@@ -254,17 +345,27 @@ public class TareaController {
         return ResponseEntity.ok(ApiResponse.success("Tarea actualizada exitosamente", tareaDto));
     }
 
-    @Operation(summary = "Eliminar tarea", description = "Elimina una tarea y todas sus subtareas y adjuntos asociados.")
+    @Operation(
+            summary = "Eliminar tarea",
+            description = "Elimina una tarea y todas sus subtareas y adjuntos asociados."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Tarea eliminada",
+                    content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @ApiResponse(responseCode = "401", description = "No autenticado",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Tarea no encontrada",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> eliminarTarea(
-            @AuthenticationPrincipal Jwt jwt,
-            @Parameter(description = "ID de la tarea") @PathVariable Long id
+            @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt,
+            @Parameter(description = "ID de la tarea", example = "10") @PathVariable Long id
     ) {
         Long usuarioId = resolverUsuarioId(jwt);
         log.info("DELETE /api/v1/tareas/{} - Usuario ID: {}", id, usuarioId);
 
         tareaService.eliminarTarea(id, usuarioId);
-
         return ResponseEntity.ok(ApiResponse.success("Tarea eliminada exitosamente", null));
     }
 }

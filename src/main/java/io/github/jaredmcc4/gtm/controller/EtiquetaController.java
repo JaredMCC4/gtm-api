@@ -3,6 +3,7 @@ package io.github.jaredmcc4.gtm.controller;
 import io.github.jaredmcc4.gtm.domain.Etiqueta;
 import io.github.jaredmcc4.gtm.dto.etiqueta.EtiquetaDto;
 import io.github.jaredmcc4.gtm.dto.response.ApiResponse;
+import io.github.jaredmcc4.gtm.dto.response.ErrorResponse;
 import io.github.jaredmcc4.gtm.exception.UnauthorizedException;
 import io.github.jaredmcc4.gtm.mapper.EtiquetaMapper;
 import io.github.jaredmcc4.gtm.services.EtiquetaService;
@@ -11,6 +12,10 @@ import io.github.jaredmcc4.gtm.util.JwtExtractorUtil;
 import io.github.jaredmcc4.gtm.util.JwtUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -29,7 +34,8 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/v1/etiquetas")
 @RequiredArgsConstructor
-@Tag(name = "Etiquetas", description = "Gestión de etiquetas personalizadas para tareas.")
+@SecurityRequirement(name = "bearerAuth")
+@Tag(name = "Etiquetas", description = "Gestion de etiquetas personalizadas para tareas.")
 public class EtiquetaController {
 
     private final EtiquetaService etiquetaService;
@@ -49,9 +55,16 @@ public class EtiquetaController {
     }
 
     @Operation(summary = "Obtener todas las etiquetas del usuario", description = "Lista completa de etiquetas personalizadas.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Etiquetas obtenidas",
+                    content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @ApiResponse(responseCode = "401", description = "No autenticado",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @GetMapping
-    public ResponseEntity<ApiResponse<List<EtiquetaDto>>> obtenerEtiquetas(@AuthenticationPrincipal Jwt jwt,
-                                                                           @RequestHeader(value = "Authorization", required = false) String authorizationHeader ){
+    public ResponseEntity<ApiResponse<List<EtiquetaDto>>> obtenerEtiquetas(
+            @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
         Long usuarioId = resolveUsuarioId(jwt, authorizationHeader);
         log.info("GET /api/v1/etiquetas - Usuario ID: {}", usuarioId);
 
@@ -63,12 +76,20 @@ public class EtiquetaController {
         return ResponseEntity.ok(ApiResponse.success("Etiquetas obtenidas exitosamente", etiquetasDto));
     }
 
-    @Operation(summary = "Obtener etiqueta por ID", description = "Detalle de una etiqueta específica.")
+    @Operation(summary = "Obtener etiqueta por ID", description = "Detalle de una etiqueta especifica.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Etiqueta encontrada",
+                    content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @ApiResponse(responseCode = "401", description = "No autenticado",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Etiqueta no encontrada",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<EtiquetaDto>> obtenerEtiquetaPorId(
-            @AuthenticationPrincipal Jwt jwt,
+            @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt,
             @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
-            @Parameter(description = "ID de la etiqueta") @PathVariable Long id
+            @Parameter(description = "ID de la etiqueta", example = "3") @PathVariable Long id
     ) {
         Long usuarioId = resolveUsuarioId(jwt, authorizationHeader);
         log.info("GET /api/v1/etiquetas/{} - Usuario ID: {}", id, usuarioId);
@@ -79,10 +100,18 @@ public class EtiquetaController {
         return ResponseEntity.ok(ApiResponse.success("Etiqueta obtenida exitosamente", etiquetaDto));
     }
 
-    @Operation(summary = "Crear nueva etiqueta", description = "Crea una etiqueta con nombre y color hexadecimal únicos.")
+    @Operation(summary = "Crear nueva etiqueta", description = "Crea una etiqueta con nombre y color hexadecimal unicos.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Etiqueta creada",
+                    content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Datos invalidos / duplicados",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "No autenticado",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @PostMapping
     public ResponseEntity<ApiResponse<EtiquetaDto>> crearEtiqueta(
-            @AuthenticationPrincipal Jwt jwt,
+            @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt,
             @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Valid @RequestBody EtiquetaDto etiquetaDto
     ) {
@@ -100,11 +129,21 @@ public class EtiquetaController {
     }
 
     @Operation(summary = "Actualizar etiqueta", description = "Modifica el nombre y color de una etiqueta.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Etiqueta actualizada",
+                    content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Datos invalidos / duplicados",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "No autenticado",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Etiqueta no encontrada",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<EtiquetaDto>> actualizarEtiqueta(
-            @AuthenticationPrincipal Jwt jwt,
+            @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt,
             @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
-            @Parameter(description = "ID de la etiqueta") @PathVariable Long id,
+            @Parameter(description = "ID de la etiqueta", example = "3") @PathVariable Long id,
             @Valid @RequestBody EtiquetaDto etiquetaDto
     ) {
         Long usuarioId = resolveUsuarioId(jwt, authorizationHeader);
@@ -118,17 +157,24 @@ public class EtiquetaController {
     }
 
     @Operation(summary = "Eliminar etiqueta", description = "Elimina una etiqueta y la desvincula de todas las tareas.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Etiqueta eliminada",
+                    content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @ApiResponse(responseCode = "401", description = "No autenticado",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Etiqueta no encontrada",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> eliminarEtiqueta(
-            @AuthenticationPrincipal Jwt jwt,
+            @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt,
             @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
-            @Parameter(description = "ID de la etiqueta") @PathVariable Long id
+            @Parameter(description = "ID de la etiqueta", example = "3") @PathVariable Long id
     ) {
         Long usuarioId = resolveUsuarioId(jwt, authorizationHeader);
         log.info("DELETE /api/v1/etiquetas/{} - Usuario ID: {}", id, usuarioId);
 
         etiquetaService.eliminarEtiqueta(id, usuarioId);
-
         return ResponseEntity.ok(ApiResponse.success("Etiqueta eliminada exitosamente", null));
     }
 }

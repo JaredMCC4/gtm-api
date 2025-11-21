@@ -1,8 +1,8 @@
 package io.github.jaredmcc4.gtm.mapper;
 
-import io.github.jaredmcc4.gtm.domain.Rol;
 import io.github.jaredmcc4.gtm.domain.Usuario;
 import io.github.jaredmcc4.gtm.dto.usuario.UsuarioDto;
+import io.github.jaredmcc4.gtm.dto.rol.RolDto;
 import org.springframework.stereotype.Component;
 
 import java.util.stream.Collectors;
@@ -20,11 +20,13 @@ public class UsuarioMapper {
                 .email(usuario.getEmail())
                 .nombreUsuario(usuario.getNombreUsuario())
                 .zonaHoraria(usuario.getZonaHoraria())
-                .enabled(usuario.isActivo())
+                .activo(usuario.isActivo())
                 .roles(usuario.getRoles().stream()
-                        .map(Rol::getNombreRol)
+                        .map(rol -> RolDto.builder()
+                                .id(rol.getId())
+                                .nombreRol(rol.getNombreRol())
+                                .build())
                         .collect(Collectors.toSet()))
-                .createdAt(usuario.getCreatedAt())
                 .build();
     }
 }
