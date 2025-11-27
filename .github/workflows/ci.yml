@@ -30,7 +30,6 @@ jobs:
       TEST_DB_USERNAME: gtm_test
       TEST_DB_PASSWORD: gtm_test555
       JWT_SECRET: 01234567890123456789012345678901
-      MAVEN_OPTS: -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
 
     steps:
       - name: Checkout
