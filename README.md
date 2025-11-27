@@ -1,4 +1,5 @@
 # Gestor de Tareas Moderno API (GTM-API)
+[![Versión 1.0.0](https://img.shields.io/badge/Versi%C3%B3n-1.0.0-1E3A8A?style=for-the-badge&logo=semver&logoColor=ffffff)](CHANGELOG.md)
 [![Java 21](https://img.shields.io/badge/Java-21-F89820?style=for-the-badge&logo=openjdk&logoColor=ffffff)](#)
 [![Spring Boot 3.5.7](https://img.shields.io/badge/Spring%20Boot-3.5.7-00B050?style=for-the-badge&logo=springboot&logoColor=ffffff)](#)
 [![Maven 3.9.11](https://img.shields.io/badge/Maven-3.9.11-B40124?style=for-the-badge&logo=apachemaven&logoColor=ffffff)](#)
@@ -22,6 +23,7 @@ API REST construida con Spring Boot que funciona como backend del Gestor de Tare
 - [Ejecución de pruebas](#ejecución-de-pruebas)
 - [Documentación de la API y documentos funcionales](#documentación-de-la-api-y-documentos-funcionales)
 - [Migraciones de base de datos](#migraciones-de-base-de-datos)
+- [Changelog](#changelog)
 - [Licencia](#licencia)
 - [Autor](#autor)
 
@@ -171,10 +173,10 @@ gtm-api
 O bien empaqueta y ejecuta el JAR:
 ```bash
 ./mvnw clean package
-java -jar target/gtm-api-0.0.1-SNAPSHOT.jar
+java -jar target/gtm-backend-1.0.0.jar
 ```
-- Puerto por defecto: `server.port=28` → `http://localhost:28`.
-- Prefijo principal: `/api/v1` (ej. `http://localhost:28/api/v1/tareas`).
+- Puerto por defecto: `server.port=2828` → `http://localhost:2828`.
+- Prefijo principal: `/api/v1` (ej. `http://localhost:2828/api/v1/tareas`).
 - Asegúrate de que `UPLOAD_DIR` exista o la aplicación lo podrá crear automáticamente.
 
 ## Ejecución de pruebas
@@ -192,11 +194,14 @@ java -jar target/gtm-api-0.0.1-SNAPSHOT.jar
 - **Dependencias declaradas:** existe `spring-boot-testcontainers`, pero aún no se ha habilitado ningún test con `@Testcontainers`; la documentación refleja este estado para evitar confusiones.
 
 ## Documentación de la API y documentos funcionales
-- **Swagger/OpenAPI:** disponible en `http://localhost:28/swagger` y el JSON en `http://localhost:28/v3/api-docs`. `OpenApiConfig` define título, versión, descripción, contacto (`Jared Ch, jaredjosue888@gmail.com`), servidor (`http://localhost:28`) y licencia (MIT).
+- **Swagger/OpenAPI:** disponible en `http://localhost:2828/swagger` y el JSON en `http://localhost:2828/v3/api-docs`. `OpenApiConfig` define título, versión, descripción, contacto (`Jared Ch, jaredjosue888@gmail.com`), servidor (`http://localhost:2828`) y licencia (MIT).
 - **Documentos adicionales:**
   - [tecnologias.md](tecnologias.md): decisiones tecnológicas.
   - [HELP.md](HELP.md): enlaces de referencia.
   - [src/scripts/password_encrypt_gen.py](src/scripts/password_encrypt_gen.py): script CLI para generar contraseñas BCrypt.
+
+## Changelog
+- El historial de cambios completo vive en [`CHANGELOG.md`](CHANGELOG.md). La versión actual es `1.0.0`.
 
 ## Migraciones de base de datos
 - Scripts en `src/main/resources/db/migration`.

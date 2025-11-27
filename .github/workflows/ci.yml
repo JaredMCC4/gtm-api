@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint-test-build:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+          --health-start-period=20s
+
+    env:
+      TEST_DB_URL: jdbc:mysql://127.0.0.1:3307/gtm_test?allowPublicKeyRetrieval=true&sslMode=PREFERRED&serverTimezone=America/Costa_Rica
+      TEST_DB_USERNAME: gtm_test
+      TEST_DB_PASSWORD: gtm_test555
+      JWT_SECRET: 01234567890123456789012345678901
+      MAVEN_OPTS: -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Install MySQL client
+        run: sudo apt-get update && sudo apt-get install -y mysql-client
+
+      - name: Wait for MySQL
+        run: |
+          for i in {1..30}; do
+            if mysqladmin ping -h 127.0.0.1 -P 3306 -proot --silent; then
+              echo "MySQL is up"
+              break
+            fi
+            echo "Waiting for MySQL..."
+            sleep 2
+          done
+
+      - name: Provision test database
+        run: |
+          mysql -h 127.0.0.1 -P 3306 -uroot -proot -e "CREATE DATABASE IF NOT EXISTS gtm_test;"
+          mysql -h 127.0.0.1 -P 3306 -uroot -proot -e "CREATE USER IF NOT EXISTS 'gtm_test'@'%' IDENTIFIED BY '${TEST_DB_PASSWORD}';"
+          mysql -h 127.0.0.1 -P 3306 -uroot -proot -e "GRANT ALL PRIVILEGES ON gtm_test.* TO 'gtm_test'@'%'; FLUSH PRIVILEGES;"
+
+      - name: Lint Dockerfile (hadolint)
+        run: docker run --rm -i hadolint/hadolint:v2.12.0 < Dockerfile
+
+      - name: Run tests (unit + integration)
+        run: ./mvnw -B clean verify -P integration-tests
+
+      - name: Build container image
+        run: docker build --pull --no-cache -t gtm-api:ci .

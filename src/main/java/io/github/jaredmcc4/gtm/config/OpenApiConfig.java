@@ -24,7 +24,7 @@ import org.springframework.context.annotation.Configuration;
                 license = @License(name = "MIT License", url = "https://opensource.org/licenses/MIT")
         ),
         servers = {
-                @Server(url = "http://localhost:28", description = "Servidor de desarrollo")
+                @Server(url = "http://localhost:2828", description = "Servidor de desarrollo")
         },
         security = @SecurityRequirement(name = OpenApiConfig.SECURITY_SCHEME)
 )
