@@ -50,6 +50,8 @@ class FlywayMigrationTest {
                 .baselineOnMigrate(baseline)
                 .load();
 
+        flyway.migrate();
+
         assertThat(flyway.info().applied()).isNotEmpty();
     }
 }
