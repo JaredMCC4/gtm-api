@@ -1,0 +1,39 @@
+# VCS
+.git
+.gitignore
+.gitattributes
+
+# IDE / editor
+.idea
+.vscode
+*.iml
+
+# Build outputs
+target
+build
+out
+*.class
+
+# Logs
+logs
+*.log
+spring.log
+
+# Local env / secrets
+.env
+.env.*
+!.env.example
+!.env.test.example
+.env.docker.local
+
+# Runtime data
+uploads
+docker-data
+*.pid
+
+# Dependencies / caches
+node_modules
+
+# System noise
+.DS_Store
+Thumbs.db
