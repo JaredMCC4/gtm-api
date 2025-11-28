@@ -1,5 +1,5 @@
 # Gestor de Tareas Moderno API (GTM-API)
-[![Versión 1.0.0](https://img.shields.io/badge/Versi%C3%B3n-1.0.0-1E3A8A?style=for-the-badge&logo=semver&logoColor=ffffff)](CHANGELOG.md)
+[![Versión 1.1.0](https://img.shields.io/badge/Versi%C3%B3n-1.1.0-1E3A8A?style=for-the-badge&logo=semver&logoColor=ffffff)](CHANGELOG.md)
 [![Java 21](https://img.shields.io/badge/Java-21-F89820?style=for-the-badge&logo=openjdk&logoColor=ffffff)](#)
 [![Spring Boot 3.5.7](https://img.shields.io/badge/Spring%20Boot-3.5.7-00B050?style=for-the-badge&logo=springboot&logoColor=ffffff)](#)
 [![Maven 3.9.11](https://img.shields.io/badge/Maven-3.9.11-B40124?style=for-the-badge&logo=apachemaven&logoColor=ffffff)](#)
@@ -36,6 +36,7 @@ API REST construida con Spring Boot que funciona como backend del Gestor de Tare
 - Endpoints de perfil y cambio de contraseña (`/api/v1/usuarios`) respaldados por BCrypt.
 - Respuestas normalizadas (`ApiResponse`/`PageResponse`), manejo global de errores, internacionalización básica (`messages*.properties`) y límites de carga (10 MB).
 - Observabilidad con Spring Boot Actuator (`/actuator/health` público y métricas protegidas).
+- Autenticación: JWT + refresh tokens y login social vía OAuth2 (Google, GitHub) con emisión de tokens propios.
 
 ## Stack tecnológico y arquitectura
 - **Backend:** Java 21, Spring Boot 3.5.7 (Web, Validation, Actuator, Security, OAuth2 Resource Server, Multipart).

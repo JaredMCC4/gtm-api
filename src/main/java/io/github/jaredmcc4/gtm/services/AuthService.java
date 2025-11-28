@@ -47,4 +47,12 @@ public interface AuthService {
      * @param token JWT a validar
      */
     void validarToken(String token);
+
+    /**
+     * Emite un JWT y refresh token para un usuario ya validado (por ejemplo, login social).
+     *
+     * @param usuario entidad autenticada
+     * @return respuesta con tokens listos para el frontend
+     */
+    JwtResponse emitirTokensParaUsuario(Usuario usuario);
 }

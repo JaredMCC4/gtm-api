@@ -4,10 +4,12 @@ import io.github.jaredmcc4.gtm.dto.auth.JwtResponse;
 import io.github.jaredmcc4.gtm.dto.auth.LoginRequest;
 import io.github.jaredmcc4.gtm.dto.auth.RefreshTokenRequest;
 import io.github.jaredmcc4.gtm.dto.auth.RegistroRequest;
+import io.github.jaredmcc4.gtm.dto.auth.SocialLoginRequest;
 import io.github.jaredmcc4.gtm.dto.response.ApiResponse;
 import io.github.jaredmcc4.gtm.dto.usuario.UsuarioDto;
 import io.github.jaredmcc4.gtm.mapper.UsuarioMapper;
 import io.github.jaredmcc4.gtm.services.AuthService;
+import io.github.jaredmcc4.gtm.services.SocialAuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -29,6 +31,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final SocialAuthService socialAuthService;
     private final UsuarioMapper usuarioMapper;
 
     /**
@@ -70,6 +73,26 @@ public class AuthController {
     public ResponseEntity<ApiResponse<JwtResponse>> login(@Valid @RequestBody LoginRequest request) {
         log.info("POST /api/v1/auth/login - Email: {}", request.getEmail());
         var jwtResponse = authService.autenticarUsuario(request);
+        return ResponseEntity.ok(ApiResponse.success("Autenticacion exitosa", jwtResponse));
+    }
+
+    /**
+     * Intercambia el authorization code o access token de un proveedor externo y emite JWT propios.
+     *
+     * @param request datos del proveedor y token/código
+     * @return tokens de la plataforma
+     */
+    @Operation(summary = "Login con Google, Microsoft o GitHub", description = "Intercambia el authorization code o access token y devuelve JWT + refresh propios.")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Autenticacion social exitosa",
+                    content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Datos invalidos o configuracion faltante",
+                    content = @Content(schema = @Schema(implementation = ApiResponse.class)))
+    })
+    @PostMapping("/oauth/login")
+    public ResponseEntity<ApiResponse<JwtResponse>> loginConProveedor(@Valid @RequestBody SocialLoginRequest request) {
+        log.info("POST /api/v1/auth/oauth/login - Provider: {}", request.getProvider());
+        var jwtResponse = socialAuthService.login(request);
         return ResponseEntity.ok(ApiResponse.success("Autenticacion exitosa", jwtResponse));
     }
 

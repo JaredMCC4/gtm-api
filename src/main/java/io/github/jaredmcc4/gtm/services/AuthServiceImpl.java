@@ -99,17 +99,7 @@ public class AuthServiceImpl implements AuthService {
             throw new BadCredentialsException("El usuario no está activo.");
         }
 
-        List<String> roles = usuario.getRoles().stream().map(Rol::getNombreRol).collect(Collectors.toList());
-
-        String jwtToken = jwtUtil.generarToken(usuario.getEmail(), usuario.getId(), roles);
-        String refreshToken = crearRefreshToken(usuario);
-
-        return JwtResponse.builder()
-                .jwtToken(jwtToken)
-                .type("Bearer")
-                .expiresIn(jwtExpiration)
-                .refreshToken(refreshToken)
-                .build();
+        return emitirTokensParaUsuario(usuario);
     }
 
     /**
@@ -174,6 +164,28 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /**
+     * Emite un JWT + refresh token para un usuario autenticado (por ejemplo, login social).
+     *
+     * @param usuario entidad existente y habilitada
+     * @return respuesta con tokens
+     */
+    @Override
+    @Transactional
+    public JwtResponse emitirTokensParaUsuario(Usuario usuario) {
+        List<String> roles = usuario.getRoles().stream().map(Rol::getNombreRol).collect(Collectors.toList());
+
+        String jwtToken = jwtUtil.generarToken(usuario.getEmail(), usuario.getId(), roles);
+        String refreshToken = crearRefreshToken(usuario);
+
+        return JwtResponse.builder()
+                .jwtToken(jwtToken)
+                .type("Bearer")
+                .expiresIn(jwtExpiration)
+                .refreshToken(refreshToken)
+                .build();
+    }
+
+    /**
      * Genera y persiste un refresh token con vigencia de 30 días para el usuario.
      *
      * @param usuario propietario
@@ -193,4 +205,3 @@ public class AuthServiceImpl implements AuthService {
         return token;
     }
 }
-

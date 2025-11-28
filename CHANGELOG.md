@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-11-28
+### Added
+- Login social vía OAuth2 con Google y GitHub: intercambio de `code`/`access_token`, obtención de perfil (incluyendo email primario en GitHub) y emisión de JWT + refresh propios.
+- Endpoint público `POST /api/v1/auth/oauth/login` para completar el flujo social desde el frontend.
+- Propiedades de configuración para proveedores (`oauth.google.*`, `oauth.github.*`) en el archivo de ejemplo.
+
+### Changed
+- Bump de versión del artefacto a `1.1.0` y actualización del README con la nueva versión.
+
 ## [1.0.0] - 2025-11-27
 ### Added
 - API pública para autenticación (registro, login, refresh, logout, validación) con JWT HS256 y refresh tokens persistidos.
@@ -20,4 +29,3 @@ All notable changes to this project will be documented in this file. The format 
 ### Security & Privacy
 - Reglas de autorización claras por rol (USER/ADMIN) y CORS configurable por entorno.
 - Exclusión explícita de `.env` y secretos del contexto de build y de las imágenes publicadas.
-
