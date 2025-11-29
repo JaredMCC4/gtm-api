@@ -13,6 +13,7 @@ import io.github.jaredmcc4.gtm.dto.usuario.UsuarioDto;
 import io.github.jaredmcc4.gtm.exception.UnauthorizedException;
 import io.github.jaredmcc4.gtm.mapper.UsuarioMapper;
 import io.github.jaredmcc4.gtm.services.AuthService;
+import io.github.jaredmcc4.gtm.services.SocialAuthService;
 import io.github.jaredmcc4.gtm.util.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -49,6 +50,9 @@ class AuthControllerTests {
 
     @MockitoBean
     private AuthService authService;
+
+    @MockitoBean
+    private SocialAuthService socialAuthService;
 
     @MockitoBean
     private UsuarioMapper usuarioMapper;

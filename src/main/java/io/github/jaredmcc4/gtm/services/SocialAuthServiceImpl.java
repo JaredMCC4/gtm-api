@@ -1,6 +1,5 @@
 package io.github.jaredmcc4.gtm.services;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import io.github.jaredmcc4.gtm.config.OAuthProviderProperties;
 import io.github.jaredmcc4.gtm.domain.Rol;
 import io.github.jaredmcc4.gtm.domain.Usuario;
@@ -14,6 +13,7 @@ import io.github.jaredmcc4.gtm.repository.RolRepository;
 import io.github.jaredmcc4.gtm.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -104,7 +104,7 @@ public class SocialAuthServiceImpl implements SocialAuthService {
                 .accept(MediaType.APPLICATION_JSON)
                 .body(form)
                 .retrieve()
-                .body(new TypeReference<>() {});
+                .body(new ParameterizedTypeReference<Map<String, Object>>() {});
 
         if (tokenResponse == null || !tokenResponse.containsKey("access_token")) {
             throw new IllegalStateException("No se pudo obtener el access token de " + provider);
@@ -126,7 +126,7 @@ public class SocialAuthServiceImpl implements SocialAuthService {
                 .accept(MediaType.APPLICATION_JSON)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
                 .retrieve()
-                .body(new TypeReference<>() {});
+                .body(new ParameterizedTypeReference<Map<String, Object>>() {});
     }
 
     private OAuthUserInfo parseOpenIdProfile(Map<String, Object> userInfo, OAuthProvider provider) {
@@ -149,7 +149,7 @@ public class SocialAuthServiceImpl implements SocialAuthService {
                 .accept(MediaType.APPLICATION_JSON)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
                 .retrieve()
-                .body(new TypeReference<>() {});
+                .body(new ParameterizedTypeReference<Map<String, Object>>() {});
 
         if (userProfile == null) {
             throw new IllegalStateException("No se pudo obtener el perfil de GitHub.");
@@ -179,7 +179,7 @@ public class SocialAuthServiceImpl implements SocialAuthService {
                 .accept(MediaType.APPLICATION_JSON)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
                 .retrieve()
-                .body(new TypeReference<>() {});
+                .body(new ParameterizedTypeReference<List<Map<String, Object>>>() {});
 
         if (emails == null || emails.isEmpty()) {
             return null;

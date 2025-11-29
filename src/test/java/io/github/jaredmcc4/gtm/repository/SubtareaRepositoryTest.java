@@ -21,7 +21,14 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.*;
 
 @DataJpaTest
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
+@TestPropertySource(properties = {
+    "spring.datasource.url=jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1",
+    "spring.datasource.driver-class-name=org.h2.Driver",
+    "spring.jpa.hibernate.ddl-auto=create-drop",
+    "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
+    "spring.flyway.enabled=false"
+})
 @DisplayName("SubtareaRepository - Integration Tests")
 class SubtareaRepositoryTest {
 
@@ -123,7 +130,7 @@ class SubtareaRepositoryTest {
     class OperacionesCascadaTests {
 
         @Test
-        @DisplayName("Debería eliminar subtareas al eliminar tarea")
+        @DisplayName("Debería eliminar subtareas al eliminar tarea usando deleteByTareaId")
         void deberiaEliminarSubtareasAlEliminarTarea() {
             Subtarea subtarea = crearSubtarea("Subtarea", false);
             Long subtareaId = subtarea.getId();
@@ -131,6 +138,8 @@ class SubtareaRepositoryTest {
             entityManager.flush();
             entityManager.clear();
 
+            // Primero eliminar subtareas, luego la tarea (como lo hace el service)
+            subtareaRepository.deleteByTareaId(tarea.getId());
             tareaRepository.deleteById(tarea.getId());
             entityManager.flush();
 

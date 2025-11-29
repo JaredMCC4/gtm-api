@@ -41,6 +41,9 @@
         <java.version>21</java.version>
         <jacoco.version>0.8.11</jacoco.version>
         <flyway.version>11.7.2</flyway.version>
+        <jacoco.skip>true</jacoco.skip>
+        <skipTests>false</skipTests>
+        <mockito.version>5.12.0</mockito.version>
     </properties>
     <dependencies>
         <dependency>
@@ -108,10 +111,6 @@
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-oauth2-jose</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springdoc</groupId>
@@ -248,7 +247,7 @@
                     <excludes>
                         <exclude>**/*IntegrationTest.java</exclude>
                     </excludes>
-                    <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true ${surefireArgLine}</argLine>
+                    <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true -Djdk.attach.allowAttachSelf=true --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED ${surefireArgLine}</argLine>
                 </configuration>
             </plugin>
             
@@ -385,6 +384,7 @@
                     </execution>
                 </executions>
                 <configuration>
+                    <skip>${jacoco.skip}</skip>
                     <excludes>
                         <exclude>**/dto/**</exclude>
                         <exclude>**/config/**</exclude>

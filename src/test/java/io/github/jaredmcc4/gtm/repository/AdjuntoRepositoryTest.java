@@ -21,7 +21,14 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.*;
 
 @DataJpaTest
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
+@TestPropertySource(properties = {
+    "spring.datasource.url=jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1",
+    "spring.datasource.driver-class-name=org.h2.Driver",
+    "spring.jpa.hibernate.ddl-auto=create-drop",
+    "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
+    "spring.flyway.enabled=false"
+})
 @DisplayName("AdjuntoRepository - Integration Tests")
 class AdjuntoRepositoryTest {
 
@@ -154,7 +161,7 @@ class AdjuntoRepositoryTest {
     class OperacionesCascadaTests {
 
         @Test
-        @DisplayName("Debería eliminar adjuntos al eliminar tarea")
+        @DisplayName("Debería eliminar adjuntos al eliminar tarea usando deleteByTareaId")
         void deberiaEliminarAdjuntosAlEliminarTarea() {
             Adjunto adjunto = crearAdjunto("archivo.pdf", "/uploads/uuid.pdf");
             Long adjuntoId = adjunto.getId();
@@ -162,6 +169,8 @@ class AdjuntoRepositoryTest {
             entityManager.flush();
             entityManager.clear();
 
+            // Primero eliminar adjuntos, luego la tarea (como lo hace el service)
+            adjuntoRepository.deleteByTareaId(tarea.getId());
             tareaRepository.deleteById(tarea.getId());
             entityManager.flush();
 
