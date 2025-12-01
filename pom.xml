@@ -10,7 +10,7 @@
     </parent>
     <groupId>io.github.jaredmcc4</groupId>
     <artifactId>gtm-backend</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.1</version>
     <name>gtm-api</name>
     <description>Gestor de Tareas Moderno - API REST</description>
     <url>https://github.com/JaredMCC4/gtm-api</url>
@@ -34,7 +34,7 @@
     <scm>
         <connection>scm:git:https://github.com/JaredMCC4/gtm-api.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/JaredMCC4/gtm-api.git</developerConnection>
-        <tag>v1.0.0</tag>
+        <tag>v1.1.1</tag>
         <url>https://github.com/JaredMCC4/gtm-api</url>
     </scm>
     <properties>

@@ -18,7 +18,7 @@ import org.springframework.context.annotation.Configuration;
 @OpenAPIDefinition(
         info = @Info(
                 title = "Gestor de Tareas Moderno - GTM API",
-                version = "1.0.0",
+                version = "1.1.1",
                 description = "API REST para autenticacion, gestion de tareas, subtareas, etiquetas, adjuntos y perfil de usuario.",
                 contact = @Contact(name = "Jared Ch", email = "jaredjosue888@gmail.com", url = "https://github.com/JaredMCC4"),
                 license = @License(name = "MIT License", url = "https://opensource.org/licenses/MIT")
@@ -50,7 +50,7 @@ public class OpenApiConfig {
         return new OpenAPI()
                 .info(new io.swagger.v3.oas.models.info.Info()
                         .title("Gestor de Tareas Moderno - GTM API")
-                        .version("1.0.0"))
+                        .version("1.1.1"))
                 .addSecurityItem(new io.swagger.v3.oas.models.security.SecurityRequirement().addList(SECURITY_SCHEME))
                 .components(new Components()
                         .addSecuritySchemes(SECURITY_SCHEME,

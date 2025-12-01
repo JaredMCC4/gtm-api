@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2025-12-01
+### Added
+- Protección anti-bots en autenticación usando Cloudflare Turnstile: validación del token recibido del frontend para el flujo de registro/login.
+
+### Changed
+- Bump de versión del artefacto a `1.1.1` y actualización del README con la nueva versión.
+
 ## [1.1.0] - 2025-11-28
 ### Added
 - Login social vía OAuth2 con Google y GitHub: intercambio de `code`/`access_token`, obtención de perfil (incluyendo email primario en GitHub) y emisión de JWT + refresh propios.

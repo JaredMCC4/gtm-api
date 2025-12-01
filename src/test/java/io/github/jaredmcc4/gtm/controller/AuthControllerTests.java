@@ -14,6 +14,7 @@ import io.github.jaredmcc4.gtm.exception.UnauthorizedException;
 import io.github.jaredmcc4.gtm.mapper.UsuarioMapper;
 import io.github.jaredmcc4.gtm.services.AuthService;
 import io.github.jaredmcc4.gtm.services.SocialAuthService;
+import io.github.jaredmcc4.gtm.services.TurnstileService;
 import io.github.jaredmcc4.gtm.util.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -42,6 +43,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DisplayName("Auth Controller - Integration Tests")
 class AuthControllerTests {
 
+    private static final String TURNSTILE_TOKEN = "turnstile-test-token";
+
     @Autowired
     private MockMvc mockMvc;
 
@@ -53,6 +56,9 @@ class AuthControllerTests {
 
     @MockitoBean
     private SocialAuthService socialAuthService;
+
+    @MockitoBean
+    private TurnstileService turnstileService;
 
     @MockitoBean
     private UsuarioMapper usuarioMapper;
@@ -85,7 +91,8 @@ class AuthControllerTests {
                     "nuevo@example.com",
                     "Password123!",
                     "Nuevo Usuario",
-                    "America/Costa_Rica"
+                    "America/Costa_Rica",
+                    TURNSTILE_TOKEN
             );
             Usuario usuario = UsuarioTestBuilder.unUsuario()
                     .conEmail(request.getEmail())
@@ -122,7 +129,8 @@ class AuthControllerTests {
                     "email-invalido",
                     "Password123!",
                     "Usuario",
-                    "America/Costa_Rica"
+                    "America/Costa_Rica",
+                    TURNSTILE_TOKEN
             );
 
             mockMvc.perform(post("/api/v1/auth/registro")
@@ -144,7 +152,8 @@ class AuthControllerTests {
                     "test@example.com",
                     "Pass1!",
                     "Usuario",
-                    "America/Costa_Rica"
+                    "America/Costa_Rica",
+                    TURNSTILE_TOKEN
             );
 
             mockMvc.perform(post("/api/v1/auth/registro")
@@ -165,7 +174,8 @@ class AuthControllerTests {
                     "",
                     "Password123!",
                     "Usuario",
-                    "America/Costa_Rica"
+                    "America/Costa_Rica",
+                    TURNSTILE_TOKEN
             );
 
             mockMvc.perform(post("/api/v1/auth/registro")
@@ -184,7 +194,8 @@ class AuthControllerTests {
                     "existente@example.com",
                     "Password123!",
                     "Usuario",
-                    "America/Costa_Rica"
+                    "America/Costa_Rica",
+                    TURNSTILE_TOKEN
             );
 
             when(authService.registrarUsuario(any(RegistroRequest.class)))

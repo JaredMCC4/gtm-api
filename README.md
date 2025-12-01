@@ -1,5 +1,5 @@
 # Gestor de Tareas Moderno API (GTM-API)
-[![Versión 1.1.0](https://img.shields.io/badge/Versi%C3%B3n-1.1.0-1E3A8A?style=for-the-badge&logo=semver&logoColor=ffffff)](CHANGELOG.md)
+[![Versión 1.1.1](https://img.shields.io/badge/Versi%C3%B3n-1.1.1-1E3A8A?style=for-the-badge&logo=semver&logoColor=ffffff)](CHANGELOG.md)
 [![Java 21](https://img.shields.io/badge/Java-21-F89820?style=for-the-badge&logo=openjdk&logoColor=ffffff)](#)
 [![Spring Boot 3.5.7](https://img.shields.io/badge/Spring%20Boot-3.5.7-00B050?style=for-the-badge&logo=springboot&logoColor=ffffff)](#)
 [![Maven 3.9.11](https://img.shields.io/badge/Maven-3.9.11-B40124?style=for-the-badge&logo=apachemaven&logoColor=ffffff)](#)
@@ -174,7 +174,7 @@ gtm-api
 O bien empaqueta y ejecuta el JAR:
 ```bash
 ./mvnw clean package
-java -jar target/gtm-backend-1.0.0.jar
+java -jar target/gtm-backend-1.1.1.jar
 ```
 - Puerto por defecto: `server.port=2828` → `http://localhost:2828`.
 - Prefijo principal: `/api/v1` (ej. `http://localhost:2828/api/v1/tareas`).
@@ -197,12 +197,10 @@ java -jar target/gtm-backend-1.0.0.jar
 ## Documentación de la API y documentos funcionales
 - **Swagger/OpenAPI:** disponible en `http://localhost:2828/swagger` y el JSON en `http://localhost:2828/v3/api-docs`. `OpenApiConfig` define título, versión, descripción, contacto (`Jared Ch, jaredjosue888@gmail.com`), servidor (`http://localhost:2828`) y licencia (MIT).
 - **Documentos adicionales:**
-  - [tecnologias.md](tecnologias.md): decisiones tecnológicas.
-  - [HELP.md](HELP.md): enlaces de referencia.
   - [src/scripts/password_encrypt_gen.py](src/scripts/password_encrypt_gen.py): script CLI para generar contraseñas BCrypt.
 
 ## Changelog
-- El historial de cambios completo vive en [`CHANGELOG.md`](CHANGELOG.md). La versión actual es `1.0.0`.
+- El historial de cambios completo vive en [`CHANGELOG.md`](CHANGELOG.md). La versión actual es `1.1.1`.
 
 ## Migraciones de base de datos
 - Scripts en `src/main/resources/db/migration`.

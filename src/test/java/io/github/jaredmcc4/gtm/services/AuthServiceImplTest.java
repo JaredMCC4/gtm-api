@@ -56,6 +56,8 @@ public class AuthServiceImplTest {
     @InjectMocks
     private AuthServiceImpl authService;
 
+    private static final String TURNSTILE_TOKEN = "turnstile-test-token";
+
     private Rol rolUser;
     private Usuario usuario;
 
@@ -86,7 +88,8 @@ public class AuthServiceImplTest {
                     "nuevo@test.com",
                     "password123",
                     "Nuevo Usuario",
-                    "America/Costa_Rica"
+                    "America/Costa_Rica",
+                    TURNSTILE_TOKEN
             );
 
             when(usuarioRepository.existsByEmail(request.getEmail())).thenReturn(false);
@@ -114,7 +117,8 @@ public class AuthServiceImplTest {
                     "test@test.com",
                     "password123",
                     "Usuario",
-                    "America/Costa_Rica"
+                    "America/Costa_Rica",
+                    TURNSTILE_TOKEN
             );
 
             when(usuarioRepository.existsByEmail(request.getEmail())).thenReturn(true);
@@ -133,7 +137,8 @@ public class AuthServiceImplTest {
                     "nuevo@prueba.com",
                     "password123",
                     "Usuario",
-                    "America/Costa_Rica"
+                    "America/Costa_Rica",
+                    TURNSTILE_TOKEN
             );
 
             when(usuarioRepository.existsByEmail(request.getEmail())).thenReturn(false);
