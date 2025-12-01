@@ -70,6 +70,8 @@ public class SocialAuthServiceImpl implements SocialAuthService {
 
     private void validarConfiguracion(OAuthProviderProperties.Provider cfg, OAuthProvider provider) {
         if (!StringUtils.hasText(cfg.getClientId()) || !StringUtils.hasText(cfg.getClientSecret())) {
+            log.error("OAuth {} - clientId presente: {}, clientSecret presente: {}", 
+                    provider, StringUtils.hasText(cfg.getClientId()), StringUtils.hasText(cfg.getClientSecret()));
             throw new IllegalStateException("Faltan credenciales (clientId/clientSecret) para " + provider);
         }
         if (!StringUtils.hasText(cfg.getTokenUri()) || !StringUtils.hasText(cfg.getUserInfoUri())) {
@@ -107,9 +109,12 @@ public class SocialAuthServiceImpl implements SocialAuthService {
                 .body(new ParameterizedTypeReference<Map<String, Object>>() {});
 
         if (tokenResponse == null || !tokenResponse.containsKey("access_token")) {
+            log.error("Token response de {}: {}", provider, tokenResponse);
             throw new IllegalStateException("No se pudo obtener el access token de " + provider);
         }
-        return Objects.toString(tokenResponse.get("access_token"));
+        String token = Objects.toString(tokenResponse.get("access_token"));
+        log.info("Access token obtenido de {} (longitud: {})", provider, token.length());
+        return token;
     }
 
     private OAuthUserInfo obtenerPerfil(OAuthProvider provider, OAuthProviderProperties.Provider cfg, String accessToken) {
@@ -147,7 +152,7 @@ public class SocialAuthServiceImpl implements SocialAuthService {
                 .get()
                 .uri(cfg.getUserInfoUri())
                 .accept(MediaType.APPLICATION_JSON)
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+                .header(HttpHeaders.AUTHORIZATION, "token " + accessToken)
                 .retrieve()
                 .body(new ParameterizedTypeReference<Map<String, Object>>() {});
 
@@ -177,7 +182,7 @@ public class SocialAuthServiceImpl implements SocialAuthService {
                 .get()
                 .uri(emailsUri)
                 .accept(MediaType.APPLICATION_JSON)
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+                .header(HttpHeaders.AUTHORIZATION, "token " + accessToken)
                 .retrieve()
                 .body(new ParameterizedTypeReference<List<Map<String, Object>>>() {});
 

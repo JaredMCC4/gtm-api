@@ -10,12 +10,14 @@ import io.github.jaredmcc4.gtm.dto.usuario.UsuarioDto;
 import io.github.jaredmcc4.gtm.mapper.UsuarioMapper;
 import io.github.jaredmcc4.gtm.services.AuthService;
 import io.github.jaredmcc4.gtm.services.SocialAuthService;
+import io.github.jaredmcc4.gtm.services.TurnstileService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,12 +34,14 @@ public class AuthController {
 
     private final AuthService authService;
     private final SocialAuthService socialAuthService;
+    private final TurnstileService turnstileService;
     private final UsuarioMapper usuarioMapper;
 
     /**
      * Registra un nuevo usuario final y devuelve sus datos visibles.
      *
      * @param request datos de registro validados (email, password, nombre, zona horaria)
+     * @param httpRequest request HTTP para obtener la IP del cliente
      * @return respuesta con el usuario creado en formato DTO
      */
     @Operation(summary = "Registrar nuevo usuario", description = "Crea una cuenta nueva.")
@@ -48,12 +52,34 @@ public class AuthController {
                     content = @Content(schema = @Schema(implementation = ApiResponse.class)))
     })
     @PostMapping("/registro")
-    public ResponseEntity<ApiResponse<UsuarioDto>> registrarUsuario(@Valid @RequestBody RegistroRequest request) {
+    public ResponseEntity<ApiResponse<UsuarioDto>> registrarUsuario(
+            @Valid @RequestBody RegistroRequest request,
+            HttpServletRequest httpRequest) {
         log.info("POST /api/v1/auth/registro - Email: {}", request.getEmail());
+        
+        // Verificar Turnstile token
+        String clientIp = obtenerClientIp(httpRequest);
+        turnstileService.verificarToken(request.getTurnstileToken(), clientIp);
+        
         var usuario = authService.registrarUsuario(request);
         var usuarioDto = usuarioMapper.toDto(usuario);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Usuario registrado exitosamente", usuarioDto));
+    }
+
+    /**
+     * Obtiene la IP real del cliente considerando proxies.
+     */
+    private String obtenerClientIp(HttpServletRequest request) {
+        String xForwardedFor = request.getHeader("X-Forwarded-For");
+        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
+            return xForwardedFor.split(",")[0].trim();
+        }
+        String xRealIp = request.getHeader("X-Real-IP");
+        if (xRealIp != null && !xRealIp.isEmpty()) {
+            return xRealIp;
+        }
+        return request.getRemoteAddr();
     }
 
     /**

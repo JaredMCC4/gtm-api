@@ -33,5 +33,9 @@ public class RegistroRequest {
 
     @Schema(description = "Zona horaria preferida", example = "America/Costa_Rica")
     private String zonaHoraria = "America/Costa_Rica";
+
+    @Schema(description = "Token de Cloudflare Turnstile para verificación")
+    @NotBlank(message = "El token de verificación es requerido.")
+    private String turnstileToken;
 }
 
