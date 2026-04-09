@@ -1,11 +1,13 @@
 package io.github.jaredmcc4.gtm.services;
 
+import io.github.jaredmcc4.gtm.domain.Etiqueta;
 import io.github.jaredmcc4.gtm.domain.Tarea;
 import io.github.jaredmcc4.gtm.domain.Usuario;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Contrato para operaciones de negocio sobre tareas de un usuario.
@@ -88,7 +90,11 @@ public interface TareaService {
      * @param usuarioId propietario
      * @return tarea actualizada
      */
-    Tarea actualizarTarea(Long tareaId, Tarea tareaActualizada, Long usuarioId);
+    default Tarea actualizarTarea(Long tareaId, Tarea tareaActualizada, Long usuarioId) {
+        return actualizarTarea(tareaId, tareaActualizada, usuarioId, null);
+    }
+
+    Tarea actualizarTarea(Long tareaId, Tarea tareaActualizada, Long usuarioId, Set<Etiqueta> etiquetasActualizadas);
 
     /**
      * Elimina una tarea y sus dependencias verificando pertenencia al usuario.

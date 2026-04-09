@@ -1,5 +1,6 @@
 package io.github.jaredmcc4.gtm.services;
 
+import io.github.jaredmcc4.gtm.domain.Etiqueta;
 import io.github.jaredmcc4.gtm.domain.Tarea;
 import io.github.jaredmcc4.gtm.domain.Usuario;
 import io.github.jaredmcc4.gtm.exception.ResourceNotFoundException;
@@ -13,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Implementacion de {@link TareaService} que aplica validaciones de negocio para tareas.
@@ -80,9 +82,15 @@ public class TareaServiceImpl implements TareaService {
     @Override
     @Transactional
     public Tarea actualizarTarea(Long tareaId, Tarea tareaActualizada, Long usuarioId) {
+        return actualizarTarea(tareaId, tareaActualizada, usuarioId, null);
+    }
+
+    @Override
+    @Transactional
+    public Tarea actualizarTarea(Long tareaId, Tarea tareaActualizada, Long usuarioId, Set<Etiqueta> etiquetasActualizadas) {
         log.info("Actualizando tarea con ID: {} Usuario ID: {}", tareaId, usuarioId);
         Tarea tareaExistente = obtenerTareaPorIdYUsuarioId(tareaId, usuarioId);
-        actualizarCamposTarea(tareaExistente, tareaActualizada);
+        actualizarCamposTarea(tareaExistente, tareaActualizada, etiquetasActualizadas);
         validarTarea(tareaExistente);
         return tareaRepository.save(tareaExistente);
     }
@@ -115,7 +123,7 @@ public class TareaServiceImpl implements TareaService {
     /**
      * Aplica actualizaciones parciales a la tarea existente.
      */
-    private void actualizarCamposTarea(Tarea tareaExistente, Tarea tareaActualizada) {
+    private void actualizarCamposTarea(Tarea tareaExistente, Tarea tareaActualizada, Set<Etiqueta> etiquetasActualizadas) {
         if (tareaActualizada.getTitulo() != null) {
             tareaExistente.setTitulo(tareaActualizada.getTitulo());
         }
@@ -131,6 +139,8 @@ public class TareaServiceImpl implements TareaService {
         if (tareaActualizada.getFechaVencimiento() != null) {
             tareaExistente.setFechaVencimiento(tareaActualizada.getFechaVencimiento());
         }
-        tareaExistente.setEtiquetas(tareaActualizada.getEtiquetas());
+        if (etiquetasActualizadas != null) {
+            tareaExistente.setEtiquetas(etiquetasActualizadas);
+        }
     }
 }

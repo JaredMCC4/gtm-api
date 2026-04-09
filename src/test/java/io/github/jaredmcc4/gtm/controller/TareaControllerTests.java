@@ -352,12 +352,15 @@ class TareaControllerTests {
         @WithMockUser
         @DisplayName("Debería actualizar una tarea correctamente")
         void deberiaActualizarTarea() throws Exception {
+            Etiqueta etiqueta = EtiquetaTestBuilder.unaEtiqueta().conId(7L).conUsuario(usuario).build();
             ActualizarTareaRequest request = ActualizarTareaRequest.builder()
                     .titulo("Título actualizado")
                     .prioridad(Tarea.Prioridad.ALTA)
+                    .etiquetasIds(Set.of(7L))
                     .build();
 
-            when(tareaService.actualizarTarea(eq(1L), any(Tarea.class), eq(1L))).thenReturn(tarea);
+            when(etiquetaService.obtenerEtiquetaPorIdYUsuarioId(7L, 1L)).thenReturn(etiqueta);
+            when(tareaService.actualizarTarea(eq(1L), any(Tarea.class), eq(1L), anySet())).thenReturn(tarea);
 
             mockMvc.perform(put("/api/v1/tareas/1")
                             .with(csrf())
@@ -365,19 +368,20 @@ class TareaControllerTests {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk());
+
+            verify(etiquetaService).obtenerEtiquetaPorIdYUsuarioId(7L, 1L);
+            verify(tareaService).actualizarTarea(eq(1L), any(Tarea.class), eq(1L),
+                    argThat(set -> set.stream().anyMatch(e -> e.getId().equals(7L))));
         }
 
         @Test
         @WithMockUser
         @DisplayName("Debería conservar etiquetas actuales cuando no se envían etiquetasIds")
         void deberiaConservarEtiquetasEnActualizacionSinEtiquetasIds() throws Exception {
-            Etiqueta etiqueta = EtiquetaTestBuilder.unaEtiqueta().conId(5L).conUsuario(usuario).build();
-            Tarea tareaExistente = TareaTestBuilder.unaTarea().conId(1L).conUsuario(usuario).conEtiqueta(etiqueta).build();
             ActualizarTareaRequest request = ActualizarTareaRequest.builder()
                     .titulo("Título actualizado")
                     .build();
-            when(tareaService.obtenerTareaPorIdYUsuarioId(1L, 1L)).thenReturn(tareaExistente);
-            when(tareaService.actualizarTarea(eq(1L), any(Tarea.class), eq(1L))).thenReturn(tarea);
+            when(tareaService.actualizarTarea(eq(1L), any(Tarea.class), eq(1L), isNull())).thenReturn(tarea);
 
             mockMvc.perform(put("/api/v1/tareas/1")
                             .with(csrf())
@@ -386,7 +390,7 @@ class TareaControllerTests {
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk());
 
-            verify(tareaService).actualizarTarea(eq(1L), argThat(t -> t.getEtiquetas().stream().anyMatch(e -> e.getId().equals(5L))), eq(1L));
+            verify(tareaService).actualizarTarea(eq(1L), any(Tarea.class), eq(1L), isNull());
             verify(etiquetaService, never()).obtenerEtiquetaPorIdYUsuarioId(anyLong(), anyLong());
         }
 
@@ -396,7 +400,7 @@ class TareaControllerTests {
         void deberiaRetornar404AlActualizarInexistente() throws Exception {
             ActualizarTareaRequest request = ActualizarTareaRequest.builder().titulo("Título actualizado").build();
 
-            when(tareaService.actualizarTarea(eq(999L), any(Tarea.class), eq(1L)))
+            when(tareaService.actualizarTarea(eq(999L), any(Tarea.class), eq(1L), isNull()))
                     .thenThrow(new ResourceNotFoundException("Tarea no encontrada"));
 
             mockMvc.perform(put("/api/v1/tareas/999")

@@ -438,13 +438,11 @@ public class TareaController {
                 .estado(request.getEstado())
                 .fechaVencimiento(request.getFechaVencimiento())
                 .build();
-        if (request.getEtiquetasIds() != null) {
-            tareaActualizada.setEtiquetas(resolverEtiquetas(request.getEtiquetasIds(), usuarioId));
-        } else {
-            tareaActualizada.setEtiquetas(tareaService.obtenerTareaPorIdYUsuarioId(id, usuarioId).getEtiquetas());
-        }
+        Set<Etiqueta> etiquetasActualizadas = request.getEtiquetasIds() != null
+                ? resolverEtiquetas(request.getEtiquetasIds(), usuarioId)
+                : null;
 
-        Tarea tarea = tareaService.actualizarTarea(id, tareaActualizada, usuarioId);
+        Tarea tarea = tareaService.actualizarTarea(id, tareaActualizada, usuarioId, etiquetasActualizadas);
         TareaDto tareaDto = tareaMapper.toDto(tarea);
 
         return ResponseEntity.ok(ApiResponse.success("Tarea actualizada exitosamente", tareaDto));
