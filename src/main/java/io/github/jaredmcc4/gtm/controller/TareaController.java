@@ -1,5 +1,6 @@
 package io.github.jaredmcc4.gtm.controller;
 
+import io.github.jaredmcc4.gtm.domain.Etiqueta;
 import io.github.jaredmcc4.gtm.domain.Tarea;
 import io.github.jaredmcc4.gtm.dto.response.ApiResponse;
 import io.github.jaredmcc4.gtm.dto.response.ErrorResponse;
@@ -10,6 +11,7 @@ import io.github.jaredmcc4.gtm.dto.tarea.EstadisticasDto;
 import io.github.jaredmcc4.gtm.dto.tarea.TareaDto;
 import io.github.jaredmcc4.gtm.exception.UnauthorizedException;
 import io.github.jaredmcc4.gtm.mapper.TareaMapper;
+import io.github.jaredmcc4.gtm.services.EtiquetaService;
 import io.github.jaredmcc4.gtm.services.TareaService;
 import io.github.jaredmcc4.gtm.services.UsuarioService;
 import io.github.jaredmcc4.gtm.util.JwtUtil;
@@ -37,7 +39,9 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -54,6 +58,7 @@ public class TareaController {
 
     private final TareaService tareaService;
     private final UsuarioService usuarioService;
+    private final EtiquetaService etiquetaService;
     private final TareaMapper tareaMapper;
     private final JwtUtil jwtUtil;
 
@@ -75,6 +80,19 @@ public class TareaController {
             return jwtUtil.extraerUsuarioId(jwtAuth.getToken().getTokenValue());
         }
         throw new UnauthorizedException("Token JWT requerido.");
+    }
+
+    private Set<Etiqueta> resolverEtiquetas(Set<Long> etiquetasIds, Long usuarioId) {
+        return etiquetasIds.stream()
+                .map(etiquetaId -> etiquetaService.obtenerEtiquetaPorIdYUsuarioId(etiquetaId, usuarioId))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private Set<Etiqueta> resolverEtiquetasOpcionales(Set<Long> etiquetasIds, Long usuarioId) {
+        if (etiquetasIds == null) {
+            return null;
+        }
+        return resolverEtiquetas(etiquetasIds, usuarioId);
     }
 
     /**
@@ -378,6 +396,7 @@ public class TareaController {
                 .prioridad(request.getPrioridad())
                 .fechaVencimiento(request.getFechaVencimiento())
                 .build();
+        tarea.setEtiquetas(resolverEtiquetasOpcionales(request.getEtiquetasIds(), usuarioId));
 
         Tarea tareaCreada = tareaService.crearTarea(tarea, usuario);
         TareaDto tareaDto = tareaMapper.toDto(tareaCreada);
@@ -424,8 +443,9 @@ public class TareaController {
                 .estado(request.getEstado())
                 .fechaVencimiento(request.getFechaVencimiento())
                 .build();
+        Set<Etiqueta> etiquetasActualizadas = resolverEtiquetasOpcionales(request.getEtiquetasIds(), usuarioId);
 
-        Tarea tarea = tareaService.actualizarTarea(id, tareaActualizada, usuarioId);
+        Tarea tarea = tareaService.actualizarTarea(id, tareaActualizada, usuarioId, etiquetasActualizadas);
         TareaDto tareaDto = tareaMapper.toDto(tarea);
 
         return ResponseEntity.ok(ApiResponse.success("Tarea actualizada exitosamente", tareaDto));
@@ -462,4 +482,3 @@ public class TareaController {
         return ResponseEntity.ok(ApiResponse.success("Tarea eliminada exitosamente", null));
     }
 }
-

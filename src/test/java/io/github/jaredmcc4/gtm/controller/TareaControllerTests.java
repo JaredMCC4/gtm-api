@@ -1,8 +1,10 @@
 package io.github.jaredmcc4.gtm.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.jaredmcc4.gtm.builders.EtiquetaTestBuilder;
 import io.github.jaredmcc4.gtm.builders.TareaTestBuilder;
 import io.github.jaredmcc4.gtm.builders.UsuarioTestBuilder;
+import io.github.jaredmcc4.gtm.domain.Etiqueta;
 import io.github.jaredmcc4.gtm.config.TestSecurityConfig;
 import io.github.jaredmcc4.gtm.domain.Tarea;
 import io.github.jaredmcc4.gtm.domain.Usuario;
@@ -12,6 +14,7 @@ import io.github.jaredmcc4.gtm.dto.tarea.TareaDto;
 import io.github.jaredmcc4.gtm.exception.GlobalExceptionHandler;
 import io.github.jaredmcc4.gtm.exception.ResourceNotFoundException;
 import io.github.jaredmcc4.gtm.mapper.TareaMapper;
+import io.github.jaredmcc4.gtm.services.EtiquetaService;
 import io.github.jaredmcc4.gtm.services.TareaService;
 import io.github.jaredmcc4.gtm.services.UsuarioService;
 import io.github.jaredmcc4.gtm.util.JwtUtil;
@@ -35,6 +38,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -60,6 +64,9 @@ class TareaControllerTests {
 
     @MockitoBean
     private UsuarioService usuarioService;
+
+    @MockitoBean
+    private EtiquetaService etiquetaService;
 
     @MockitoBean
     private TareaMapper tareaMapper;
@@ -127,6 +134,29 @@ class TareaControllerTests {
                     .andExpect(jsonPath("$.success").value(true));
 
             verify(tareaService).crearTarea(any(Tarea.class), eq(usuario));
+        }
+
+        @Test
+        @WithMockUser
+        @DisplayName("Debería asociar etiquetas al crear una tarea")
+        void deberiaAsociarEtiquetasAlCrearTarea() throws Exception {
+            Etiqueta etiqueta = EtiquetaTestBuilder.unaEtiqueta().conId(5L).conUsuario(usuario).build();
+            CrearTareaRequest request = CrearTareaRequest.builder()
+                    .titulo("Nueva tarea")
+                    .etiquetasIds(Set.of(5L))
+                    .build();
+            when(etiquetaService.obtenerEtiquetaPorIdYUsuarioId(5L, 1L)).thenReturn(etiqueta);
+            when(tareaService.crearTarea(any(Tarea.class), any(Usuario.class))).thenReturn(tarea);
+
+            mockMvc.perform(post("/api/v1/tareas")
+                            .with(csrf())
+                            .with(jwt().jwt(jwtMock()))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isCreated());
+
+            verify(etiquetaService).obtenerEtiquetaPorIdYUsuarioId(5L, 1L);
+            verify(tareaService).crearTarea(argThat(t -> t.getEtiquetas().stream().anyMatch(e -> e.getId().equals(5L))), eq(usuario));
         }
 
         @Test
@@ -322,12 +352,15 @@ class TareaControllerTests {
         @WithMockUser
         @DisplayName("Debería actualizar una tarea correctamente")
         void deberiaActualizarTarea() throws Exception {
+            Etiqueta etiqueta = EtiquetaTestBuilder.unaEtiqueta().conId(7L).conUsuario(usuario).build();
             ActualizarTareaRequest request = ActualizarTareaRequest.builder()
                     .titulo("Título actualizado")
                     .prioridad(Tarea.Prioridad.ALTA)
+                    .etiquetasIds(Set.of(7L))
                     .build();
 
-            when(tareaService.actualizarTarea(eq(1L), any(Tarea.class), eq(1L))).thenReturn(tarea);
+            when(etiquetaService.obtenerEtiquetaPorIdYUsuarioId(7L, 1L)).thenReturn(etiqueta);
+            when(tareaService.actualizarTarea(eq(1L), any(Tarea.class), eq(1L), anySet())).thenReturn(tarea);
 
             mockMvc.perform(put("/api/v1/tareas/1")
                             .with(csrf())
@@ -335,6 +368,30 @@ class TareaControllerTests {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk());
+
+            verify(etiquetaService).obtenerEtiquetaPorIdYUsuarioId(7L, 1L);
+            verify(tareaService).actualizarTarea(eq(1L), any(Tarea.class), eq(1L),
+                    argThat(set -> set.stream().anyMatch(e -> e.getId().equals(7L))));
+        }
+
+        @Test
+        @WithMockUser
+        @DisplayName("Debería conservar etiquetas actuales cuando no se envían etiquetasIds")
+        void deberiaConservarEtiquetasEnActualizacionSinEtiquetasIds() throws Exception {
+            ActualizarTareaRequest request = ActualizarTareaRequest.builder()
+                    .titulo("Título actualizado")
+                    .build();
+            when(tareaService.actualizarTarea(eq(1L), any(Tarea.class), eq(1L), isNull())).thenReturn(tarea);
+
+            mockMvc.perform(put("/api/v1/tareas/1")
+                            .with(csrf())
+                            .with(jwt().jwt(jwtMock()))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk());
+
+            verify(tareaService).actualizarTarea(eq(1L), any(Tarea.class), eq(1L), isNull());
+            verify(etiquetaService, never()).obtenerEtiquetaPorIdYUsuarioId(anyLong(), anyLong());
         }
 
         @Test
@@ -343,7 +400,7 @@ class TareaControllerTests {
         void deberiaRetornar404AlActualizarInexistente() throws Exception {
             ActualizarTareaRequest request = ActualizarTareaRequest.builder().titulo("Título actualizado").build();
 
-            when(tareaService.actualizarTarea(eq(999L), any(Tarea.class), eq(1L)))
+            when(tareaService.actualizarTarea(eq(999L), any(Tarea.class), eq(1L), isNull()))
                     .thenThrow(new ResourceNotFoundException("Tarea no encontrada"));
 
             mockMvc.perform(put("/api/v1/tareas/999")
