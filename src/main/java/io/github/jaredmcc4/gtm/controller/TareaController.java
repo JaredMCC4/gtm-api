@@ -88,6 +88,13 @@ public class TareaController {
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
+    private Set<Etiqueta> resolverEtiquetasOpcionales(Set<Long> etiquetasIds, Long usuarioId) {
+        if (etiquetasIds == null) {
+            return null;
+        }
+        return resolverEtiquetas(etiquetasIds, usuarioId);
+    }
+
     /**
      * Devuelve una pagina de tareas del usuario autenticado con soporte de orden y filtros basicos.
      *
@@ -389,9 +396,7 @@ public class TareaController {
                 .prioridad(request.getPrioridad())
                 .fechaVencimiento(request.getFechaVencimiento())
                 .build();
-        if (request.getEtiquetasIds() != null) {
-            tarea.setEtiquetas(resolverEtiquetas(request.getEtiquetasIds(), usuarioId));
-        }
+        tarea.setEtiquetas(resolverEtiquetasOpcionales(request.getEtiquetasIds(), usuarioId));
 
         Tarea tareaCreada = tareaService.crearTarea(tarea, usuario);
         TareaDto tareaDto = tareaMapper.toDto(tareaCreada);
@@ -438,9 +443,7 @@ public class TareaController {
                 .estado(request.getEstado())
                 .fechaVencimiento(request.getFechaVencimiento())
                 .build();
-        Set<Etiqueta> etiquetasActualizadas = request.getEtiquetasIds() != null
-                ? resolverEtiquetas(request.getEtiquetasIds(), usuarioId)
-                : null;
+        Set<Etiqueta> etiquetasActualizadas = resolverEtiquetasOpcionales(request.getEtiquetasIds(), usuarioId);
 
         Tarea tarea = tareaService.actualizarTarea(id, tareaActualizada, usuarioId, etiquetasActualizadas);
         TareaDto tareaDto = tareaMapper.toDto(tarea);

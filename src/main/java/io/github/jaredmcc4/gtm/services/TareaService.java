@@ -5,6 +5,7 @@ import io.github.jaredmcc4.gtm.domain.Tarea;
 import io.github.jaredmcc4.gtm.domain.Usuario;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.lang.Nullable;
 
 import java.util.List;
 import java.util.Set;
@@ -94,7 +95,7 @@ public interface TareaService {
         return actualizarTarea(tareaId, tareaActualizada, usuarioId, null);
     }
 
-    Tarea actualizarTarea(Long tareaId, Tarea tareaActualizada, Long usuarioId, Set<Etiqueta> etiquetasActualizadas);
+    Tarea actualizarTarea(Long tareaId, Tarea tareaActualizada, Long usuarioId, @Nullable Set<Etiqueta> etiquetasActualizadas);
 
     /**
      * Elimina una tarea y sus dependencias verificando pertenencia al usuario.
