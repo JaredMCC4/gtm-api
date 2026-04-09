@@ -7,6 +7,7 @@ import io.github.jaredmcc4.gtm.dto.response.PageResponse;
 import io.github.jaredmcc4.gtm.dto.tarea.TareaDto;
 import io.github.jaredmcc4.gtm.exception.UnauthorizedException;
 import io.github.jaredmcc4.gtm.mapper.TareaMapper;
+import io.github.jaredmcc4.gtm.services.EtiquetaService;
 import io.github.jaredmcc4.gtm.services.TareaService;
 import io.github.jaredmcc4.gtm.services.UsuarioService;
 import io.github.jaredmcc4.gtm.util.JwtUtil;
@@ -44,6 +45,9 @@ class TareaControllerResolverTest {
 
     @Mock
     private UsuarioService usuarioService;
+
+    @Mock
+    private EtiquetaService etiquetaService;
 
     @Mock
     private TareaMapper tareaMapper;

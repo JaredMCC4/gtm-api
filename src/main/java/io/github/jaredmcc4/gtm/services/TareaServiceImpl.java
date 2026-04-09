@@ -131,5 +131,6 @@ public class TareaServiceImpl implements TareaService {
         if (tareaActualizada.getFechaVencimiento() != null) {
             tareaExistente.setFechaVencimiento(tareaActualizada.getFechaVencimiento());
         }
+        tareaExistente.setEtiquetas(tareaActualizada.getEtiquetas());
     }
 }
